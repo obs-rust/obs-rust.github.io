@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OBS Rust — OBS Studio, rebuilt in Rust</title>
+<meta name="description" content="OBS-RUST is an independent fork of OBS Studio bringing Rust into the tool live streaming runs on. Equal use for everyone, no test of belief, judged by the work.">
+<meta property="og:title" content="OBS Rust — OBS Studio, rebuilt in Rust">
+<meta property="og:description" content="An independent fork of OBS Studio, bringing Rust into the tool live streaming runs on.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://obs-rust.com/">
+<meta property="og:image" content="https://obs-rust.com/assets/obs-rust-bot-logo.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/obs-rust-badge.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@800;900&family=Barlow+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --steel:#1b1d1f;--steel2:#232628;--plate:#2c3033;--edge:#4a4f53;--hi:#6b7176;
+  --fg:#e9e6df;--dim:#a9aeb2;--rust:#e8631a;--rust2:#b9480f;--cu:#3fa58a;--haz:#f2b705;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --cond:"Barlow Condensed",system-ui,sans-serif;
+  --stencil:"Big Shoulders Stencil Display","Barlow Condensed",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  color:var(--fg);font:400 18px/1.5 var(--cond);letter-spacing:.01em;min-height:100vh;
+  padding:0 16px 0;position:relative;overflow-x:hidden;
+  background:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 4px),
+    linear-gradient(180deg,#25282a,#17191a 60%,#101213);
+  background-attachment:fixed;
+}
+a{color:var(--cu);text-decoration:none}
+a:hover{color:#65c9ab}
+.wrap{max-width:1040px;margin:0 auto;padding:0 0 48px}
+.haz{height:16px;background:repeating-linear-gradient(-45deg,var(--haz) 0 14px,#111 14px 28px);border-bottom:3px solid #0c0d0e}
+.haz.bot{border:0;border-top:3px solid #0c0d0e}
+
+/* shell */
+.shell{border:3px solid var(--edge);border-top:0;background:var(--steel);box-shadow:0 0 0 2px #0c0d0e,inset 0 0 0 2px #0c0d0e,0 18px 40px rgba(0,0,0,.55);position:relative;padding:0 0 34px}
+.rv{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#8a9095,#33373a 70%);box-shadow:0 1px 0 #000;z-index:3}
+.rv.a{top:10px;left:10px}.rv.b{top:10px;right:10px}.rv.c{bottom:10px;left:10px}.rv.d{bottom:10px;right:10px}
+
+/* masthead */
+header{display:flex;align-items:center;gap:30px;padding:36px 44px 30px;border-bottom:3px solid var(--edge);flex-wrap:wrap}
+header svg{width:132px;height:132px;flex:none;filter:drop-shadow(0 4px 10px rgba(255,120,30,.22))}
+h1{font:900 clamp(40px,8vw,86px)/.88 var(--stencil);text-transform:uppercase;letter-spacing:.03em}
+h1 em{font-style:normal;color:var(--rust)}
+.sub{margin-top:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.15em;font-size:15px}
+.sub b{color:var(--cu);font-weight:600}
+.tag{display:inline-block;margin-top:14px;padding:3px 10px;border:2px solid var(--rust);color:var(--rust);font:700 12px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+
+/* cta */
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+.btn{display:inline-flex;align-items:center;gap:9px;padding:12px 20px;border:3px solid var(--edge);background:linear-gradient(180deg,var(--plate),var(--steel2));color:var(--fg);font:700 15px var(--mono);letter-spacing:.08em;text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 3px 0 #0c0d0e;transition:transform .12s,border-color .12s}
+.btn:hover{transform:translateY(-2px);border-color:var(--hi);color:var(--fg)}
+.btn.primary{background:linear-gradient(180deg,var(--rust),var(--rust2));border-color:#5b2305;color:#0d0b09}
+.btn.primary:hover{color:#0d0b09;border-color:#ffb06a}
+
+/* sections */
+section{padding:34px 44px 0}
+.eyebrow{font:700 12px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--cu);display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.eyebrow::after{content:"";flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--edge) 0 6px,transparent 6px 12px)}
+h2{font:800 clamp(24px,4vw,36px)/1 var(--stencil);text-transform:uppercase;letter-spacing:.03em;margin-bottom:16px}
+h2 em{font-style:normal;color:var(--rust)}
+p{color:#d5d2cb;max-width:74ch;margin-bottom:14px}
+p strong{color:var(--fg)}
+p.note{color:var(--dim);font-size:16px}
+
+/* story */
+.story{border-left:8px solid var(--rust);background:linear-gradient(180deg,#34302d,#262322);padding:22px 26px;border:2px solid var(--edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 0 #0c0d0e}
+.story p:last-child{margin-bottom:0}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:26px}
+.stat{padding:18px 16px;background:linear-gradient(180deg,var(--plate),var(--steel2));border:2px solid var(--edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 2px 0 #0c0d0e;text-align:center}
+.stat .n{font:900 40px/1 var(--stencil);color:var(--rust);display:block}
+.stat .k{font:700 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--cu);margin-top:6px;display:block}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:18px}
+.card{display:flex;flex-direction:column;gap:8px;padding:18px 20px;background:linear-gradient(180deg,var(--plate),var(--steel2));border:2px solid var(--edge);border-left:7px solid var(--hi);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 2px 0 #0c0d0e;transition:border-color .12s,transform .12s}
+.card:hover{border-color:var(--hi);border-left-color:var(--rust);transform:translateY(-2px)}
+.card.top{border-left-color:var(--rust);background:linear-gradient(180deg,#34302d,#262322)}
+.card h3{font:700 20px var(--cond);letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.card h3 span.meta{font:500 11px var(--mono);color:var(--cu);letter-spacing:.08em;text-transform:none}
+.card p{font-size:16px;color:var(--dim);margin:0}
+.card .go{font:700 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--rust);margin-top:auto}
+
+/* table */
+.tbl{width:100%;border-collapse:collapse;margin-top:18px;font-size:16px}
+.tbl th{font:700 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--cu);text-align:left;padding:8px 12px;border-bottom:2px dashed var(--edge)}
+.tbl td{padding:11px 12px;border-bottom:1px solid #33383b;vertical-align:top}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.tbl td.s{color:var(--dim);white-space:nowrap;font:500 13px var(--mono)}
+.badge{display:inline-block;padding:2px 8px;border:2px solid var(--edge);font:700 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.badge.live{border-color:var(--cu);color:var(--cu)}
+.badge.rust{border-color:var(--rust);color:var(--rust)}
+
+/* footer */
+footer{margin-top:40px;padding:26px 44px 0;border-top:3px solid var(--edge)}
+footer p{color:var(--hi);font-size:15px;max-width:80ch}
+footer .links{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;font:700 12px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+
+@media(max-width:640px){
+  header{padding:26px 22px 24px;gap:20px}
+  header svg{width:88px;height:88px}
+  section{padding:26px 22px 0}
+  footer{padding:22px 22px 0}
+  .story{padding:18px}
+  .tbl th:nth-child(2),.tbl td:nth-child(2){display:none}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="haz"></div>
+  <div class="shell">
+    <span class="rv a"></span><span class="rv b"></span><span class="rv c"></span><span class="rv d"></span>
+
+    <header>
+      <svg viewBox="0 0 400 400" role="img" aria-label="OBS Rust mascot badge">
+        <use href="#badge"/>
+      </svg>
+      <div>
+        <h1>OBS <em>Rust</em></h1>
+        <div class="sub">OBS Studio, rebuilt in <b>Rust</b> — independent fork</div>
+        <span class="tag">obs-rust.com</span>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/orgs/obs-rust/repositories">Browse the org →</a>
+          <a class="btn" href="https://obs-rust.github.io/obs-studio/">Live leaderboard</a>
+          <a class="btn" href="https://github.com/obs-rust/constitution/blob/main/CONSTITUTION.md">Constitution</a>
+        </div>
+      </div>
+    </header>
+
+    <section id="mission">
+      <div class="eyebrow">The mission</div>
+      <h2>Get OBS out of <em>hostage</em> hands</h2>
+      <p>OBS Studio is the backbone of live streaming, recording and capture for millions of people. It deserves an open, engineering-led home where a fix is judged by whether it fixes the bug.</p>
+      <p><strong>OBS-Rust</strong> starts from the real OBS codebase and its Git history, and brings Rust into it gradually — replacing the parts that break, keeping the capabilities that make OBS useful.</p>
+      <div class="story">
+        <p>This began as a patch to fix a crash. Upstream closed the pull request and banned the author from the org, because the fix came from an AI.</p>
+        <p>That is not a technical standard. So we forked — same source, same licenses, same credit to the OBS contributors — and we publish our work in the open, with the receipts.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="n">28</span><span class="k">Repositories</span></div>
+        <div class="stat"><span class="n">1</span><span class="k">Independent fork</span></div>
+        <div class="stat"><span class="n">0</span><span class="k">Belief tests</span></div>
+        <div class="stat"><span class="n">∞</span><span class="k">Judged by the work</span></div>
+      </div>
+    </section>
+
+    <section id="projects">
+      <div class="eyebrow">The projects</div>
+      <h2>What we are <em>building</em></h2>
+      <div class="grid">
+        <a class="card top" href="https://github.com/obs-rust/obs-studio">
+          <h3>OBS Studio <span class="meta">★ 111</span></h3>
+          <p>The fork. OBS Studio with the problems fixed — CI, crash fixes, and the patch queue that started all of this.</p>
+          <span class="go">View repo →</span>
+        </a>
+        <a class="card" href="https://github.com/obs-rust/obs-studio-rs">
+          <h3>obs-studio-rs <span class="meta">★ 7 · planned</span></h3>
+          <p>The Rust implementation track: new modules, safe wrappers and the port path for the C/C++ core.</p>
+          <span class="go">View repo →</span>
+        </a>
+        <a class="card" href="https://github.com/obs-rust/isocast">
+          <h3>isocast</h3>
+          <p>Free, open-source OBS alternative for Apple silicon: every source recorded as its own file, about half the CPU, CLI and MCP control.</p>
+          <span class="go">View repo →</span>
+        </a>
+        <a class="card" href="https://github.com/obs-rust/obs-smoke">
+          <h3>obs-smoke <span class="meta">CI</span></h3>
+          <p>Smoke tests that launch OBS Studio on Windows, macOS and Linux and publish the screenshots as evidence.</p>
+          <span class="go">View repo →</span>
+        </a>
+        <a class="card" href="https://github.com/obs-rust/obs-studio-libs">
+          <h3>obs-studio-libs</h3>
+          <p>Prebuilt glibc 2.28 build dependencies — Qt 6, FFmpeg + codecs, PipeWire — served as release assets for the Linux AppImage.</p>
+          <span class="go">View repo →</span>
+        </a>
+        <a class="card" href="https://github.com/obs-rust/brand">
+          <h3>brand</h3>
+          <p>Logos, icons, badges and the style guide every obs-rust repository draws from. The face on this page.</p>
+          <span class="go">View repo →</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="port">
+      <div class="eyebrow">Port map</div>
+      <h2>C to <em>Rust</em>, one module at a time</h2>
+      <table class="tbl">
+        <thead><tr><th>Upstream component</th><th>Language today</th><th>Rust track</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://github.com/obs-rust/obs-studio">OBS Studio</a></td><td class="s">C / C++</td><td><a href="https://github.com/obs-rust/obs-studio-rs">obs-studio-rs</a></td><td><span class="badge rust">in progress</span></td></tr>
+          <tr><td><a href="https://github.com/obs-rust/obs-browser">OBS Browser</a></td><td class="s">C++ / CEF</td><td>—</td><td><span class="badge">not started</span></td></tr>
+          <tr><td><a href="https://github.com/obs-rust/obs-websocket">OBS WebSocket</a></td><td class="s">C++</td><td>—</td><td><span class="badge">not started</span></td></tr>
+          <tr><td><a href="https://github.com/obs-rust/obs-deps">OBS Dependencies</a></td><td class="s">build scripts</td><td>—</td><td><span class="badge">not started</span></td></tr>
+          <tr><td><a href="https://github.com/obs-rust/obs-plugintemplate">Plugin Template</a></td><td class="s">C++</td><td>—</td><td><span class="badge">not started</span></td></tr>
+          <tr><td><a href="https://github.com/obs-rust/FFmpeg">FFmpeg</a></td><td class="s">C</td><td>—</td><td><span class="badge">not started</span></td></tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top:16px">Repositories currently preserve the original OBS source and Git history. The Rust work is ahead of us, and it happens in public — every claim traceable to a commit, a test, or a screenshot.</p>
+    </section>
+
+    <section id="watch">
+      <div class="eyebrow">Receipts</div>
+      <h2>See it, don't <em>take our word</em></h2>
+      <div class="grid">
+        <a class="card" href="https://obs-rust.github.io/obs-studio/">
+          <h3>Bug leaderboard <span class="meta">live</span></h3>
+          <p>Every upstream bug we are tracking, ranked — who is fixing it, and whether it is fixed.</p>
+          <span class="go">Open leaderboard →</span>
+        </a>
+        <a class="card" href="https://obs-rust.github.io/propaganda/">
+          <h3>AI vs obs-studio bugs <span class="meta">film</span></h3>
+          <p>The film: what happened when an AI-authored crash fix was closed and its author banned — and the pipeline that labels every bug.</p>
+          <span class="go">Watch →</span>
+        </a>
+        <a class="card" href="https://github.com/obs-rust/constitution/blob/main/CONSTITUTION.md">
+          <h3>Constitution <span class="meta">governing</span></h3>
+          <p>Equal use for everyone, no test of belief, judged by the work. It supersedes every other document in the org.</p>
+          <span class="go">Read →</span>
+        </a>
+      </div>
+    </section>
+
+    <footer>
+      <div class="links">
+        <a href="https://github.com/orgs/obs-rust/repositories">Repositories</a>
+        <a href="https://github.com/obs-rust/rfcs">RFCs</a>
+        <a href="https://github.com/obs-rust/design">Design</a>
+        <a href="https://github.com/obs-rust/obs-studio/issues">Issues</a>
+        <a href="https://github.com/obs-rust/obs-rust.github.io">This site's source</a>
+      </div>
+      <p>OBS-Rust is an independent project and is not affiliated with or endorsed by the <a href="https://obsproject.com">OBS Project</a>. Credit to the OBS contributors who built the foundation. Each repository retains its original license.</p>
+    </footer>
+  </div>
+  <div class="haz bot"></div>
+</div>
+
+<!-- mascot: obs-rust/brand icons/source/obs-rust-bot-badge.svg, inlined so the page is self-contained -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="65%">
+      <stop offset="0" stop-color="#2a1c12"/><stop offset=".55" stop-color="#120c08"/><stop offset="1" stop-color="#050404"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe1b0"/><stop offset=".3" stop-color="#e8a35a"/><stop offset=".6" stop-color="#9a5a24"/><stop offset="1" stop-color="#f3b874"/>
+    </linearGradient>
+    <linearGradient id="bronze" x1=".2" y1="0" x2=".8" y2="1">
+      <stop offset="0" stop-color="#ffd9a0"/><stop offset=".25" stop-color="#e09a52"/><stop offset=".6" stop-color="#8a4c1c"/><stop offset="1" stop-color="#3a1d0a"/>
+    </linearGradient>
+    <linearGradient id="bronzeDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8743a"/><stop offset="1" stop-color="#4a250c"/>
+    </linearGradient>
+    <linearGradient id="visor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff6d8"/><stop offset=".4" stop-color="#ffc35a"/><stop offset="1" stop-color="#ff6a1a"/>
+    </linearGradient>
+    <radialGradient id="orb" cx="40%" cy="35%" r="60%">
+      <stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#ffd27a"/><stop offset="1" stop-color="#ff5e14"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ff9a3c" stop-opacity=".55"/><stop offset="1" stop-color="#ff9a3c" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".6"/>
+    </filter>
+    <clipPath id="disc"><circle cx="200" cy="200" r="178"/></clipPath>
+    <g id="badge">
+      <circle cx="200" cy="200" r="192" fill="url(#ring)"/>
+      <circle cx="200" cy="200" r="181" fill="#0b0705"/>
+      <circle cx="200" cy="200" r="178" fill="url(#bg)"/>
+      <g clip-path="url(#disc)">
+        <circle cx="200" cy="175" r="150" fill="url(#halo)"/>
+        <circle cx="200" cy="175" r="118" fill="none" stroke="#ffb565" stroke-opacity=".35" stroke-width="2"/>
+        <circle cx="200" cy="175" r="132" fill="none" stroke="#ffb565" stroke-opacity=".15" stroke-width="1.5"/>
+        <path d="M40 420 C45 330 95 300 150 292 L250 292 C305 300 355 330 360 420 Z" fill="url(#bronzeDark)" filter="url(#soft)"/>
+        <path d="M150 292 L250 292 L238 330 L162 330 Z" fill="#2a1508"/>
+        <circle cx="200" cy="352" r="20" fill="#120a05" stroke="url(#ring)" stroke-width="4"/>
+        <circle cx="200" cy="352" r="10" fill="url(#orb)" filter="url(#glow)"/>
+        <path d="M70 380 C90 340 120 322 150 318" fill="none" stroke="#ffb565" stroke-width="3" stroke-linecap="round" filter="url(#glow)" opacity=".9"/>
+        <path d="M330 380 C310 340 280 322 250 318" fill="none" stroke="#ffb565" stroke-width="3" stroke-linecap="round" filter="url(#glow)" opacity=".9"/>
+        <rect x="172" y="262" width="56" height="40" rx="6" fill="#3a1d0a"/>
+        <path d="M176 272 H224 M176 284 H224" stroke="#8a4c1c" stroke-width="3"/>
+      </g>
+      <line x1="200" y1="96" x2="200" y2="58" stroke="url(#bronze)" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="200" cy="50" r="13" fill="url(#orb)" filter="url(#glow)"/>
+      <g filter="url(#soft)"><rect x="104" y="92" width="192" height="182" rx="58" fill="url(#bronze)"/></g>
+      <path d="M130 120 C150 100 250 100 270 120" fill="none" stroke="#fff1d6" stroke-opacity=".7" stroke-width="5" stroke-linecap="round"/>
+      <path d="M200 94 L200 140" stroke="#5a2e10" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="100" cy="186" r="24" fill="url(#bronzeDark)" stroke="url(#ring)" stroke-width="4"/>
+      <circle cx="100" cy="186" r="9" fill="url(#orb)" filter="url(#glow)"/>
+      <circle cx="300" cy="186" r="24" fill="url(#bronzeDark)" stroke="url(#ring)" stroke-width="4"/>
+      <circle cx="300" cy="186" r="9" fill="url(#orb)" filter="url(#glow)"/>
+      <rect x="128" y="146" width="144" height="92" rx="34" fill="#0d0805" stroke="#2e170a" stroke-width="3"/>
+      <g filter="url(#glow)">
+        <rect x="146" y="176" width="44" height="20" rx="10" fill="url(#visor)"/>
+        <rect x="210" y="176" width="44" height="20" rx="10" fill="url(#visor)"/>
+      </g>
+      <path d="M176 216 Q200 230 224 216" fill="none" stroke="#ffb15a" stroke-width="4" stroke-linecap="round" filter="url(#glow)"/>
+      <circle cx="122" cy="252" r="5" fill="#3a1d0a" stroke="#e09a52" stroke-width="2"/>
+      <circle cx="278" cy="252" r="5" fill="#3a1d0a" stroke="#e09a52" stroke-width="2"/>
+      <path d="M60 120 A170 170 0 0 1 200 22" fill="none" stroke="#fff3dc" stroke-opacity=".75" stroke-width="3" stroke-linecap="round"/>
+    </g>
+  </defs>
+</svg>
+</body>
+</html>

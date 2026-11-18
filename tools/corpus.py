@@ -17,7 +17,8 @@ from models import Chunk, ChunkKind, Doc, FieldRow, Feed, JsonSchema, LedgerItem
 SCHEMA_VERSION = 2
 MIN_CHARS, TARGET_MAX, HARD_MAX = 300, 2000, 2400
 ARCHIVE = re.compile(r"(\d{4}-\d{2}-\d{2}|-\d{3,}\.md$|retrospective|handoff|hall-of-fame|audit)")
-CORE_PATHS = {"README.md", "AGENTS.md", "CONTRIBUTING.md", "SECURITY.md", "mcp/reference.md",
+CORE_PATHS = {"README.md", "AGENTS.md", "CONTRIBUTING.md", "SECURITY.md", "mcp/reference.md", "CODESTYLE.md",
+              "CONSTITUTION.md", "site/download.md", "site/control.md", "site/examples.md",
               "obs-websocket/docs/generated/protocol.md", "docs/rust-port/mcp.md", "docs/rust-port/control-api.md"}
 # Docs fully represented by typed chunks: their prose is not chunked a second time.
 TYPED_DOCS = {"obs-websocket/reference.md", "mcp/reference.md", "docs/features.md"}
@@ -238,14 +239,15 @@ def ledger_chunks(doc: Doc, items: list[LedgerItem]) -> list[Chunk]:
 
 # ---------------------------------------------------------------- llms.txt v2
 LLMS_SECTIONS: list[tuple[str, Callable[[Doc], bool]]] = [
-    ("Start here", lambda d: d.path in {"README.md", "AGENTS.md", "obs-websocket/docs/generated/protocol.md"}),
+    ("Start here", lambda d: d.path in {"site/download.md", "site/control.md", "README.md", "AGENTS.md",
+                                        "obs-websocket/docs/generated/protocol.md"}),
     ("Install and use", lambda d: d.path in {"docs/features.md", "docs/gpu-status.md", "SECURITY.md"}),
-    ("Control OBS", lambda d: d.group in {"websocket", "mcp"} or d.path in {"docs/rust-port/mcp.md",
+    ("Control OBS", lambda d: d.group in {"websocket", "mcp"} or d.path in {"site/examples.md", "docs/rust-port/mcp.md",
                                                                              "docs/rust-port/control-api.md"}),
     ("Extend OBS", lambda d: d.group == "libobs-api" and d.path.rsplit("/", 1)[-1] in {
         "plugins.rst", "scripting.rst", "reference-sources.rst", "reference-outputs.rst", "reference-encoders.rst",
         "reference-services.rst", "reference-frontend-api.rst", "graphics.rst", "reference-core.rst", "frontends.rst"}),
-    ("Contribute", lambda d: d.path in {"CONTRIBUTING.md", "BUILD.md", "docs/rust-port/coordination.md",
+    ("Contribute", lambda d: d.path in {"CONTRIBUTING.md", "CONSTITUTION.md", "CODESTYLE.md", "BUILD.md", "docs/rust-port/coordination.md",
                                             "docs/rust-port/testing-policy.md", "docs/ci-tooling.md",
                                             "docs/knowledge/index.md", "docs/rust-port/naming.md"}),
 ]

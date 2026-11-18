@@ -38,7 +38,8 @@ from pydantic import JsonValue
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import corpus as corpusmod  # noqa: E402
-import mcp as mcpmod  # noqa: E402
+import mcp as mcpmod
+import sitedocs  # noqa: E402
 from models import (  # noqa: E402
     Checksums,
     HeroImage,
@@ -273,7 +274,8 @@ def render_feature_cards(feats: list[Feature], n: int = 9) -> str:
 
 
 # ---------------------------------------------------------------- corpus
-CORPUS_ROOT_FILES = ["README.md", "AGENTS.md", "BUILD.md", "CONTRIBUTING.md", "SECURITY.md"]
+CORPUS_ROOT_FILES = ["README.md", "AGENTS.md", "BUILD.md", "CONTRIBUTING.md", "SECURITY.md", "CODESTYLE.md",
+                     "CONSTITUTION.md"]
 
 
 def corpus_sources(obs: Path) -> list[tuple[str, str, Path]]:
@@ -631,6 +633,15 @@ def main() -> None:
     sessions = mcpmod.load_sessions(ROOT, surface)
     mcp_md = mcpmod.corpus_markdown(surface, sessions)
     docs.append(make_doc("mcp", "mcp/reference.md", mcp_md, f"{SITE}/mcp/"))
+    # site documents for agents (DESIGN.md P0 #2): install, choose an API, copy an example
+    sums = release_checksums(rel, a.offline)
+    n_ro = sum(1 for t in surface.tools if t.annotations.readOnlyHint)
+    docs.append(make_doc("site", "site/download.md", sitedocs.download_md(
+        rel, sums, DL_GROUPS, (obs / "README.md").read_text(), human_size), f"{SITE}/#download"))
+    docs.append(make_doc("site", "site/control.md", sitedocs.control_md(
+        len(proto.requests), len(proto.events), len(proto.enums), len(surface.tools), n_ro), f"{SITE}/websocket/"))
+    docs.append(make_doc("site", "site/examples.md", sitedocs.examples_md(
+        (ROOT / "src" / "examples.html").read_text()), f"{SITE}/examples/"))
     (out / "ai" / "docs").mkdir(parents=True)
     ledger_items: list[LedgerItem] = [*ledger.features, *ledger.fixed]
     for d in docs:
@@ -678,7 +689,7 @@ def main() -> None:
     (out / "llms-full.txt").write_text("\n".join(full) + "\n")
 
     # llms-ctx.txt: the core bundle that fits a context window (DESIGN.md §7, budget 300 KB)
-    core = ["README.md", "AGENTS.md", "docs/rust-port/mcp.md", "docs/rust-port/control-api.md",
+    core = ["site/download.md", "site/control.md", "site/examples.md", "README.md", "AGENTS.md", "docs/rust-port/mcp.md", "docs/rust-port/control-api.md",
             "mcp/reference.md", "docs/rust-port/coordination.md", "docs/rust-port/testing-policy.md",
             "obs-websocket/reference.md"]
     by_path = {d.path: d for d in docs}
@@ -712,8 +723,6 @@ def main() -> None:
               f"Latest release: {latest_tag}. corpus.json has schema_version "
               f"{corpusmod.SCHEMA_VERSION}, {len(chunks)} chunks, and is also split per group under /ai/corpus/<group>.jsonl.", ""]
     extra = {
-        "Start here": [f"- [Download the beta]({releases_url}): "
-                       "Windows (msi, zip), macOS (dmg), Linux (AppImage, deb, Flatpak); installs beside upstream OBS"],
         "Control OBS": [
             f"- [MCP server]({SITE}/mcp/index.md): {len(surface.tools)} typed tools to control a local "
             "obs-studio-rust from an agent: client config, requirements, sessions, reference",
@@ -722,13 +731,16 @@ def main() -> None:
             "with a live console",
             f"- [Examples]({SITE}/examples/): Rust, Python, JS and raw-socket clients, batch requests, scripts, plugins"],
     }
-    (out / "llms.txt").write_text(corpusmod.llms_txt(docs, header, SITE, feeds, extra))
-
     ws_items, ws_nav = render_ws_items(proto)
     mstats = mcpmod.write_artifacts(out, surface, sessions, obs_sha, now.isoformat(timespec="seconds"),
                                     ROOT / "tools" / "vendor")
     (out / "mcp" / "index.md").write_text(
         f"---\ntitle: obs-studio-rust MCP server\nsource_commit: {obs_sha}\nurl: {SITE}/mcp/\n---\n" + mcp_md)
+    man = sitedocs.manifest([sitedocs.manifest_doc(out, d.slug, d.path, d.title, d.tier, d.group, d.source)
+                             for d in docs], now.isoformat(timespec="seconds"), obs_sha, ws_sha)
+    (out / "ai" / "manifest.json").write_text(json.dumps(man.model_dump(mode="json"), indent=1) + "\n")
+    router = sitedocs.router_rows(out)
+    (out / "llms.txt").write_text(corpusmod.llms_txt(docs, header + sitedocs.router_llms(router), SITE, feeds, extra))
     mref, mnav = mcpmod.render_reference(surface.tools)
     hero = mcpmod.render_transcript(next(x for x in sessions if x.slug == "record-when-ready"))
     ctx = PageContext(
@@ -737,13 +749,14 @@ def main() -> None:
         release_name=esc(rel.name or rel.tag_name) if rel else "releases",
         release_url=esc(rel.html_url) if rel else f"https://github.com/{REPO}/releases",
         release_date=(rel.published_at or "")[:10] if rel else "",
-        downloads=render_downloads(rel, release_checksums(rel, a.offline)),
+        downloads=render_downloads(rel, sums),
         feature_cards=render_feature_cards(ledger.features),
         n_features=len(ledger.features), n_fixed=len(ledger.fixed),
         n_requests=len(proto.requests), n_events=len(proto.events), n_enums=len(proto.enums),
         corpus_docs=len(docs), corpus_chunks=len(chunks),
         corpus_mb=f"{(out / 'llms-full.txt').stat().st_size / 1e6:.1f}",
         ctx_kb=f"{ctx_kb:.0f}",
+        ai_router=sitedocs.router_html(router),
         ai_doc_list="".join(
             f"<h4>{esc(groups.get(g, g))}</h4>" + "".join(
                 f'<a href="{d.site_url}" title="{esc(d.path)}">{esc(d.title)}</a>'

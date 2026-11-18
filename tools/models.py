@@ -498,6 +498,36 @@ class McpStats:
     schema_kb: str
 
 
+class RouterRow(Ours):
+    """One agent task -> the one file to fetch first."""
+
+    task: str
+    path: str
+    bytes: int
+
+
+class ManifestDoc(Ours):
+    slug: str
+    path: str
+    title: str
+    tier: Tier
+    group: str
+    url: str
+    source: str
+    bytes: int
+    sha256: str
+
+
+class Manifest(Ours):
+    """/ai/manifest.json: every /ai/docs/*.md with its size and SHA-256."""
+
+    schema_version: int
+    generated: str
+    obs_studio_commit: str
+    obs_websocket_commit: str
+    docs: list[ManifestDoc]
+
+
 @dataclass(frozen=True, slots=True)
 class Checksums:
     """A release's SHA256SUMS file: asset name -> lowercase hex digest."""
@@ -550,6 +580,7 @@ class PageContext:
     corpus_mb: str
     ctx_kb: str
     ai_doc_list: str
+    ai_router: str
     build_date: str
     obs_sha: str
     obs_sha_short: str

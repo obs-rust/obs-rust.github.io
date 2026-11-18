@@ -12,13 +12,14 @@ copy, or MCP reference drift.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from models import CorpusFile, McpSchemaFile, WsProtocol  # noqa: E402
+from models import CorpusFile, Manifest, McpSchemaFile, WsProtocol  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 EXPECTED = ["index.html", "404.html", "websocket/index.html", "examples/index.html", "ai/index.html",
@@ -180,6 +181,34 @@ def main() -> int:
     n_dl = home.count('class="sha"')
     if n_dl == 0 or n_dl != len(re.findall(r'<li><a href="https://github.com/obs-rust/obs-studio/releases/download/', home)):
         errs.append(f"index.html: {n_dl} SHA-256 lines do not match the download links")
+
+    # agent router and manifest (DESIGN.md P0 #2)
+    llms_text = (site / "llms.txt").read_text()
+    router = re.findall(r"^- ([^:\n]+): \[(/[^\]]+)\]\(https://obs-rust\.com(/[^)]+)\) \((\d+) bytes\)$",
+                        llms_text.split("## Feeds")[0], re.M)
+    if len(router) < 8:
+        errs.append(f"llms.txt: router has {len(router)} rows (< 8)")
+    for task, label, path, size in router:
+        f = site / path.lstrip("/")
+        if label != path or not f.is_file():
+            errs.append(f"router: {task}: {path} does not resolve")
+        elif f.stat().st_size != int(size):
+            errs.append(f"router: {path} is {f.stat().st_size} bytes, router says {size}")
+    if "obs-rust.com/ai/docs/site-download.md" not in llms_text.split("## Feeds")[0]:
+        errs.append("router: the download row does not point at obs-rust.com")
+    man = Manifest.model_validate_json((site / "ai/manifest.json").read_bytes())
+    on_disk = {p.name for p in (site / "ai/docs").glob("*.md")}
+    listed = {f"{d.slug}.md" for d in man.docs}
+    if on_disk != listed:
+        errs.append(f"manifest.json: lists differ from /ai/docs: {sorted(on_disk ^ listed)[:5]}")
+    for d in man.docs:
+        f = site / "ai/docs" / f"{d.slug}.md"
+        if f.is_file() and hashlib.sha256(f.read_bytes()).hexdigest() != d.sha256:
+            errs.append(f"manifest.json: sha256 mismatch for {d.slug}.md")
+    ctx = (site / "llms-ctx.txt").read_text()
+    for need in ("site/download.md", "site/control.md", "site/examples.md"):
+        if f"<!-- ===== {need} |" not in ctx:
+            errs.append(f"llms-ctx.txt: missing {need}")
 
     for e in errs:
         print("FAIL", e)

@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.12"
-# dependencies = []
+# dependencies = ["pydantic>=2.7"]
 # ///
 """Gate for a built site (DESIGN.md backlog P0 #2). Usage: uv run tools/check.py [_site]
 
@@ -12,11 +12,13 @@ copy, or MCP reference drift.
 
 from __future__ import annotations
 
-import json
 import re
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from models import CorpusFile, McpSchemaFile, WsProtocol  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 EXPECTED = ["index.html", "404.html", "websocket/index.html", "examples/index.html", "ai/index.html",
@@ -28,33 +30,47 @@ BUDGET_KB = {"llms-ctx.txt": 300, "assets/fonts": 160, "index.html": 120}
 DIGIT_OK = {"v5", "10m", "10-minute", "c++", "404"}
 
 
-class Refs(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.loads, self.links, self.text, self._skip = [], [], [], 0
+LOAD_RELS = {"stylesheet", "preload", "icon", "modulepreload", "preconnect"}
 
-    def handle_starttag(self, tag, attrs):
-        a = dict(attrs)
+
+def attr(attrs: list[tuple[str, str | None]], name: str) -> str:
+    """An HTML attribute's value, "" when absent or valueless (the last one wins, as in dict(attrs))."""
+    found = ""
+    for k, v in attrs:
+        if k == name:
+            found = v or ""
+    return found
+
+
+class Refs(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.loads: list[str] = []
+        self.links: list[str] = []
+        self.text: list[str] = []
+        self._skip = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        src, href = attr(attrs, "src"), attr(attrs, "href")
         if tag in ("style", "script"):
             self._skip += 1
-            if tag == "script" and a.get("src"):
-                self.loads.append(a["src"])
-        if tag in ("img", "iframe", "source", "video", "audio") and a.get("src"):
-            self.loads.append(a["src"])
-        if tag == "link" and a.get("href") and set((a.get("rel") or "").split()) & {"stylesheet", "preload", "icon",
-                                                                                    "modulepreload", "preconnect"}:
-            self.loads.append(a["href"])
-        if tag == "a" and a.get("href"):
-            self.links.append(a["href"])
-        for k in ("src", "href"):
-            if tag != "a" and a.get(k, "").startswith("/"):
-                self.links.append(a[k])
+            if tag == "script" and src:
+                self.loads.append(src)
+        if tag in ("img", "iframe", "source", "video", "audio") and src:
+            self.loads.append(src)
+        if tag == "link" and href and set(attr(attrs, "rel").split()) & LOAD_RELS:
+            self.loads.append(href)
+        if tag == "a" and href:
+            self.links.append(href)
+        for v in (src, href):
+            if tag != "a" and v.startswith("/"):
+                self.links.append(v)
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         if tag in ("style", "script"):
             self._skip -= 1
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         if not self._skip:
             self.text.append(data)
 
@@ -111,7 +127,7 @@ def main() -> int:
 
     # MCP reference matches the published schema
     if (site / "mcp/schema.json").exists():
-        tools = {t["name"] for t in json.loads((site / "mcp/schema.json").read_text())["tools"]}
+        tools = {t.name for t in McpSchemaFile.model_validate_json((site / "mcp/schema.json").read_text()).tools}
         cards = set(re.findall(r'<article class="tool" id="([a-z_]+)"', (site / "mcp/index.html").read_text()))
         if tools != cards:
             errs.append(f"mcp: reference cards differ from schema.json: {sorted(tools ^ cards)}")
@@ -131,22 +147,23 @@ def main() -> int:
     # corpus v2: schema, unique ids, one typed chunk per protocol item, prose chunk sizes
     cj = site / "ai/corpus.json"
     if cj.exists():
-        c = json.loads(cj.read_text())
-        if c.get("schema_version") != 2:
+        c = CorpusFile.model_validate_json(cj.read_text())
+        if c.schema_version != 2:
             errs.append("corpus.json: schema_version != 2")
-        ids = [x["id"] for x in c["chunks"]]
+        ids = [x.id for x in c.chunks]
         if len(ids) != len(set(ids)):
             errs.append("corpus.json: duplicate chunk ids")
-        proto = json.loads((site / "websocket/protocol.json").read_text())
-        for kind, key, name in (("ws-request", "requests", "requestType"), ("ws-event", "events", "eventType"),
-                                ("ws-enum", "enums", "enumType")):
-            want = {f"ws:{kind[3:]}:{x[name]}" for x in proto[key]}
-            got = {x["id"] for x in c["chunks"] if x["kind"] == kind}
+        proto = WsProtocol.model_validate_json((site / "websocket/protocol.json").read_text())
+        expected = {"ws-request": {f"ws:request:{r.requestType}" for r in proto.requests},
+                    "ws-event": {f"ws:event:{e.eventType}" for e in proto.events},
+                    "ws-enum": {f"ws:enum:{en.enumType}" for en in proto.enums}}
+        for kind, want in expected.items():
+            got = {x.id for x in c.chunks if x.kind == kind}
             if want != got:
                 errs.append(f"corpus.json: {kind} chunks differ from protocol.json: {sorted(want ^ got)[:5]}")
-        for x in c["chunks"]:
-            if x["kind"] == "prose" and x["chars"] > 2400 and "```" not in x["text"] and "\n|" not in x["text"]:
-                errs.append(f"corpus.json: prose chunk {x['id']} is {x['chars']} chars (> 2400)")
+        for x in c.chunks:
+            if x.kind == "prose" and x.chars > 2400 and "```" not in x.text and "\n|" not in x.text:
+                errs.append(f"corpus.json: prose chunk {x.id} is {x.chars} chars (> 2400)")
 
     for e in errs:
         print("FAIL", e)

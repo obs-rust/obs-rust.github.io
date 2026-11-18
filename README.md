@@ -23,6 +23,16 @@ uv run tools/build.py --obs-studio ../obs-rust.github.io-extern/obs-studio   # w
 uv run --no-project python -m http.server 8765 -d _site
 ```
 
+The tools parse every JSON input into the typed models in `tools/models.py` (pydantic at
+the boundaries, frozen dataclasses inside) and are type checked in strict mode:
+
+```sh
+uv run tools/check.py _site
+uv run --no-project --python 3.12 --with basedpyright==1.40.2 --with 'pydantic>=2.7' \
+  --with 'jsonschema>=4.22' --with types-jsonschema basedpyright --level error
+uv run tools/site_diff.py OLD_SITE _site   # byte diff, ignoring build timestamps
+```
+
 `.github/workflows/pages.yml` does the same on every push to `main`, on dispatch and
 daily, then deploys `_site/`. `CNAME` pins the custom domain. Its DNS is at Namecheap:
 apex A records point to GitHub Pages, and `www` is a CNAME to `obs-rust.github.io`.

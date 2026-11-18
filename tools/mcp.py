@@ -18,6 +18,7 @@ import jsonschema
 from pydantic import JsonValue
 
 from models import (
+    ToolGroup,
     JSON_SCHEMA,
     AllowlistFile,
     ControlApiSchema,
@@ -57,19 +58,19 @@ SITE = "https://obs-rust.com"
 REPO = "obs-rust/obs-studio"
 
 # Grouped by what an agent is trying to do. Every tool must land in exactly one group.
-GROUPS: list[tuple[str, str, str, list[str]]] = [
-    ("see", "See", "Read the state of OBS without changing anything.",
-     ["scenes_list", "scene_get_current", "sources_list", "scene_items_list", "screenshot", "pipeline_dump"]),
-    ("compose", "Compose", "Build and change scenes, sources and their layout.",
-     ["scene_create", "scene_remove", "scene_set_current", "source_create", "source_remove", "source_set_settings",
-      "scene_item_add", "scene_item_set_transform", "scene_item_set_visible"]),
-    ("live", "Go live", "Recording, streaming, the virtual camera and the virtual mic.",
-     ["record_start", "record_stop", "record_status", "stream_start", "stream_stop", "stream_status",
-      "vcam_start", "vcam_stop", "vcam_status", "vmic_status"]),
-    ("media", "Media", "Media sources.", ["media_status", "media_restart"]),
-    ("measure", "Measure", "Performance counters.", ["stats_get", "stats_reset"]),
-    ("wait", "Wait", "Block until a typed condition holds, without sleeping.", ["wait_for"]),
-]
+GROUPS: tuple[ToolGroup, ...] = (
+    ToolGroup("see", "See", "Read the state of OBS without changing anything.",
+              ("scenes_list", "scene_get_current", "sources_list", "scene_items_list", "screenshot", "pipeline_dump")),
+    ToolGroup("compose", "Compose", "Build and change scenes, sources and their layout.",
+              ("scene_create", "scene_remove", "scene_set_current", "source_create", "source_remove",
+               "source_set_settings", "scene_item_add", "scene_item_set_transform", "scene_item_set_visible")),
+    ToolGroup("live", "Go live", "Recording, streaming, the virtual camera and the virtual mic.",
+              ("record_start", "record_stop", "record_status", "stream_start", "stream_stop", "stream_status",
+               "vcam_start", "vcam_stop", "vcam_status", "vmic_status")),
+    ToolGroup("media", "Media", "Media sources.", ("media_status", "media_restart")),
+    ToolGroup("measure", "Measure", "Performance counters.", ("stats_get", "stats_reset")),
+    ToolGroup("wait", "Wait", "Block until a typed condition holds, without sleeping.", ("wait_for",)),
+)
 
 IMPL_TOOL = re.compile(
     r'const NAME: &\'static str = "(?P<name>[a-z_]+)";.*?fn description\(&self\) -> &str \{\s*'
@@ -108,7 +109,7 @@ def load_surface(obs: Path) -> Surface:
     missing = sorted(set(names) ^ set(descs))
     if missing:
         raise SystemExit(f"mcp: tool set differs between control-api.schema.json and typed_tool! source: {missing}")
-    grouped = [n for g in GROUPS for n in g[3]]
+    grouped = [n for g in GROUPS for n in g.tools]
     if sorted(grouped) != sorted(names) or len(grouped) != len(set(grouped)):
         raise SystemExit(f"mcp: GROUPS out of date: {sorted(set(names) ^ set(grouped))}")
     tools = [McpTool(name=t.name, description=descs[t.name], inputSchema=t.inputSchema,
@@ -271,7 +272,8 @@ def render_reference(tools: list[McpTool]) -> tuple[str, str]:
     by = {t.name: t for t in tools}
     cards: list[str] = []
     nav: list[str] = []
-    for gid, gname, gdesc, names in GROUPS:
+    for grp in GROUPS:
+        gid, gname, gdesc, names = grp.id, grp.name, grp.description, grp.tools
         nav.append(f'<a href="#g-{gid}">{gname} <span>{len(names)}</span></a>')
         items: list[str] = []
         for n in names:
@@ -416,7 +418,8 @@ def corpus_markdown(surface: Surface, sessions: list[Session]) -> str:
          "", "Client config (Claude Code, Cursor, Claude Desktop):", "```json",
          json.dumps(CLIENT_CONFIG.model_dump(mode="json", exclude_none=True)), "```", ""]
     by = {t.name: t for t in surface.tools}
-    for _gid, gname, gdesc, names in GROUPS:
+    for grp in GROUPS:
+        gname, gdesc, names = grp.name, grp.description, grp.tools
         o += [f"## {gname} tools", gdesc, ""]
         for n in names:
             t = by[n]

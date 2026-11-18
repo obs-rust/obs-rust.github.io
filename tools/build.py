@@ -40,6 +40,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import corpus as corpusmod  # noqa: E402
 import mcp as mcpmod  # noqa: E402
 from models import (  # noqa: E402
+    DownloadGroup,
+    DownloadOption,
     Chunk,
     Conversion,
     CorpusFile,
@@ -136,22 +138,27 @@ def human_size(n: int) -> str:
     return f"{n / 1e6:.0f} MB" if n >= 1e6 else f"{n / 1e3:.0f} KB"
 
 
-DL_GROUPS: list[tuple[str, str, list[tuple[str, str]]]] = [
-    ("Windows", "x64 · arm64", [("-windows-x64.msi", "Installer · x64"), ("-windows-arm64.msi", "Installer · arm64"),
-                                ("-windows-x64.zip", "Portable · x64"), ("-windows-arm64.zip", "Portable · arm64")]),
-    ("macOS", "Apple silicon · Intel", [("-macos-arm64.dmg", "Apple silicon"), ("-macos-x86_64.dmg", "Intel")]),
-    ("Linux", "x86_64", [(".AppImage", "AppImage · any distro"), ("-ubuntu-26.04-x86_64.deb", ".deb · Ubuntu 26.04"),
-                         (".flatpak", "Flatpak bundle")]),
-]
+DL_GROUPS: tuple[DownloadGroup, ...] = (
+    DownloadGroup("Windows", "x64 · arm64", (
+        DownloadOption("-windows-x64.msi", "Installer · x64"), DownloadOption("-windows-arm64.msi", "Installer · arm64"),
+        DownloadOption("-windows-x64.zip", "Portable · x64"), DownloadOption("-windows-arm64.zip", "Portable · arm64"))),
+    DownloadGroup("macOS", "Apple silicon · Intel", (
+        DownloadOption("-macos-arm64.dmg", "Apple silicon"), DownloadOption("-macos-x86_64.dmg", "Intel"))),
+    DownloadGroup("Linux", "x86_64", (
+        DownloadOption(".AppImage", "AppImage · any distro"),
+        DownloadOption("-ubuntu-26.04-x86_64.deb", ".deb · Ubuntu 26.04"), DownloadOption(".flatpak", "Flatpak bundle"))),
+)
 
 
 def render_downloads(rel: GhRelease | None) -> str:
     if not rel:
         return '<p>No release found. See <a href="https://github.com/obs-rust/obs-studio/releases">releases</a>.</p>'
     out: list[str] = []
-    for os_name, arch, wants in DL_GROUPS:
+    for group in DL_GROUPS:
+        os_name, arch = group.os_name, group.arch
         items: list[str] = []
-        for suffix, label in wants:
+        for opt in group.options:
+            suffix, label = opt.suffix, opt.label
             a = next((a for a in rel.assets if a.name.endswith(suffix)), None)
             if a:
                 items.append(f'<li><a href="{esc(a.browser_download_url)}">{esc(label)}'

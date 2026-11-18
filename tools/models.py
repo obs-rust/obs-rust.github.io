@@ -40,6 +40,13 @@ class Theirs(BaseModel):
     model_config = ConfigDict(frozen=True, extra="ignore")
 
 
+class Upstream(BaseModel):
+    """Upstream obs-studio data that this site republishes: unknown keys pass through, so a new
+    upstream field (e.g. a new MCP annotation hint) neither breaks the daily build nor is dropped."""
+
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+
 # ---------------------------------------------------------------- GitHub API
 class GhLanguages(RootModel[dict[str, int]]):
     """GET /repos/{repo}/languages: language name -> bytes."""
@@ -154,21 +161,21 @@ class WsRequestMessage(Ours):
 
 
 # ---------------------------------------------------------------- MCP surface
-class ToolAnnotations(Ours):
+class ToolAnnotations(Upstream):
     destructiveHint: bool
     idempotentHint: bool
     openWorldHint: bool
     readOnlyHint: bool
 
 
-class ControlApiTool(Ours):
+class ControlApiTool(Upstream):
     name: str
     inputSchema: JsonSchema
     outputSchema: JsonSchema
     annotations: ToolAnnotations
 
 
-class ControlApiSchema(Ours):
+class ControlApiSchema(Upstream):
     """obs-studio docs/rust-port/control-api.schema.json."""
 
     tools: list[ControlApiTool]
@@ -199,13 +206,13 @@ class ToolError(Ours):
     retryable: bool
 
 
-class McpServerConfig(Ours):
+class McpServerConfig(Theirs):
     command: str
     args: list[str] = []
     env: dict[str, str] | None = None
 
 
-class McpJson(Ours):
+class McpJson(Theirs):
     """A client config (.mcp.json, claude_desktop_config.json)."""
 
     mcpServers: dict[str, McpServerConfig]
@@ -544,3 +551,27 @@ def _flatten(obj: object, out: dict[str, str]) -> None:
             _flatten(v, out)
         else:
             out[f.name] = str(v)
+
+
+# ---------------------------------------------------------------- static site tables
+@dataclass(frozen=True, slots=True)
+class ToolGroup:
+    """An MCP tool group on /mcp/, by what an agent is trying to do."""
+
+    id: str
+    name: str
+    description: str
+    tools: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class DownloadOption:
+    suffix: str
+    label: str
+
+
+@dataclass(frozen=True, slots=True)
+class DownloadGroup:
+    os_name: str
+    arch: str
+    options: tuple[DownloadOption, ...]

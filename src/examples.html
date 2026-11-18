@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head:Examples — drive OBS Studio Rust from code|Copy-and-run obs-websocket v5 clients in Rust, Python and JavaScript, a raw-socket handshake, batch requests, MCP control for AI agents, OBS scripts and plugin starters.}}
+<style>
+.ex{display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px;margin-top:36px}
+.toc{position:sticky;top:80px;align-self:start;display:grid;gap:2px;font:600 13px var(--mono)}
+.toc a{padding:6px 10px;color:var(--fg2);border-left:2px solid var(--edge)}
+.toc a:hover{color:var(--fg);border-left-color:var(--rust)}
+.blk{margin-bottom:64px;scroll-margin-top:80px}
+.blk h2{font-size:clamp(26px,3.4vw,38px)}
+.blk p{color:var(--fg2);max-width:76ch;margin-bottom:14px}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--edge);margin-top:18px;flex-wrap:wrap}
+.tabs button{padding:10px 16px;background:transparent;border:0;border-bottom:2px solid transparent;color:var(--dim);font:700 13px var(--mono);letter-spacing:.06em;cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--rust)}
+.pane{display:none}.pane.on{display:block}
+.pane pre{border-top-left-radius:0;border-top-right-radius:0;border-top:0}
+.pane .dep{font:500 12.5px var(--mono);color:var(--dim);padding:8px 0}
+.libs{width:100%;border-collapse:collapse;font-size:15.5px;margin-top:10px}
+.libs td,.libs th{padding:10px 12px;border-bottom:1px solid var(--edge);text-align:left}
+.libs th{font:700 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+@media(max-width:900px){.ex{grid-template-columns:minmax(0,1fr)}.toc{display:none}}
+</style>
+</head>
+<body>
+{{nav:examples}}
+<main id="main" class="wrap">
+  <div class="phead">
+    <span class="eyebrow">Copy · paste · stream</span>
+    <h1>Examples</h1>
+    <p class="lede">Working starting points for everything that talks to OBS: WebSocket clients, agents over MCP, scripts and native plugins. Each one runs unchanged against upstream OBS Studio and obs-studio-rust; that compatibility is the point.</p>
+  </div>
+  <div class="ex">
+    <nav class="toc" aria-label="On this page">
+      <a href="#hello">Hello, OBS</a><a href="#events">Listen to events</a><a href="#raw">Raw handshake</a>
+      <a href="#batch">Batch requests</a><a href="#mcp">MCP for agents</a><a href="#scripts">Scripts</a>
+      <a href="#plugins">Native plugins</a><a href="#libs">Client libraries</a>
+    </nav>
+    <div>
+<div class="blk" id="hello">
+  <span class="eyebrow">01</span><h2>Hello, <em>OBS</em></h2>
+  <p>Connect, authenticate, read the version and switch scenes. Enable the server first under <b>Tools → WebSocket Server Settings</b> (default port 4455).</p>
+  <div class="tabset">
+    <div class="tabs" role="tablist"><button role="tab" aria-selected="true">Rust</button><button role="tab" aria-selected="false">Python</button><button role="tab" aria-selected="false">JavaScript</button></div>
+    <div class="pane on"><div class="dep">cargo add obws tokio --features tokio/full</div><pre><span class="k">use</span> obws::Client;
+
+<span class="n">#[tokio::main]</span>
+<span class="k">async fn</span> main() -> obws::error::Result&lt;()&gt; {
+    <span class="k">let</span> client = Client::connect(<span class="s">"127.0.0.1"</span>, <span class="n">4455</span>, Some(<span class="s">"password"</span>)).<span class="k">await</span>?;
+
+    <span class="k">let</span> v = client.general().version().<span class="k">await</span>?;
+    println!(<span class="s">"OBS {} · websocket {}"</span>, v.obs_version, v.obs_web_socket_version);
+
+    <span class="k">for</span> scene <span class="k">in</span> client.scenes().list().<span class="k">await</span>?.scenes {
+        println!(<span class="s">"scene: {}"</span>, scene.id.name);
+    }
+    Ok(())
+}</pre></div>
+    <div class="pane"><div class="dep">uv add obsws-python</div><pre><span class="k">import</span> obsws_python <span class="k">as</span> obs
+
+cl = obs.ReqClient(host=<span class="s">"127.0.0.1"</span>, port=<span class="n">4455</span>, password=<span class="s">"password"</span>, timeout=<span class="n">3</span>)
+
+v = cl.get_version()
+print(<span class="s">f"OBS {v.obs_version} · websocket {v.obs_web_socket_version}"</span>)
+
+<span class="k">for</span> scene <span class="k">in</span> cl.get_scene_list().scenes:
+    print(<span class="s">"scene:"</span>, scene[<span class="s">"sceneName"</span>])
+
+cl.set_current_program_scene(<span class="s">"BRB"</span>)</pre></div>
+    <div class="pane"><div class="dep">npm i obs-websocket-js</div><pre><span class="k">import</span> OBSWebSocket <span class="k">from</span> <span class="s">'obs-websocket-js'</span>;
+
+<span class="k">const</span> obs = <span class="k">new</span> OBSWebSocket();
+<span class="k">await</span> obs.connect(<span class="s">'ws://127.0.0.1:4455'</span>, <span class="s">'password'</span>);
+
+<span class="k">const</span> { obsVersion, obsWebSocketVersion } = <span class="k">await</span> obs.call(<span class="s">'GetVersion'</span>);
+console.log(<span class="s">`OBS ${obsVersion} · websocket ${obsWebSocketVersion}`</span>);
+
+<span class="k">const</span> { scenes } = <span class="k">await</span> obs.call(<span class="s">'GetSceneList'</span>);
+scenes.forEach(s =&gt; console.log(<span class="s">'scene:'</span>, s.sceneName));
+
+<span class="k">await</span> obs.call(<span class="s">'SetCurrentProgramScene'</span>, { sceneName: <span class="s">'BRB'</span> });</pre></div>
+  </div>
+  <p class="muted" style="margin-top:12px;font-size:15px">Every request name and field is in the <a href="/websocket/">API reference</a>, and you can try one live from that page before you write any code.</p>
+</div>
+
+<div class="blk" id="events">
+  <span class="eyebrow">02</span><h2>Listen to <em>events</em></h2>
+  <p>Events arrive as op 5 messages. Choose which categories you receive with the <a href="/websocket/#EventSubscription">EventSubscription</a> bitmask when you identify.</p>
+  <div class="tabset">
+    <div class="tabs" role="tablist"><button role="tab" aria-selected="true">JavaScript</button><button role="tab" aria-selected="false">Python</button></div>
+    <div class="pane on"><pre>obs.on(<span class="s">'CurrentProgramSceneChanged'</span>, ({ sceneName }) =&gt; console.log(<span class="s">'live:'</span>, sceneName));
+obs.on(<span class="s">'StreamStateChanged'</span>, ({ outputActive, outputState }) =&gt; console.log(outputState));
+obs.on(<span class="s">'InputMuteStateChanged'</span>, ({ inputName, inputMuted }) =&gt;
+  console.log(<span class="s">`${inputName} ${inputMuted ? 'muted' : 'live'}`</span>));</pre></div>
+    <div class="pane"><pre><span class="k">import</span> obsws_python <span class="k">as</span> obs
+
+ev = obs.EventClient(host=<span class="s">"127.0.0.1"</span>, port=<span class="n">4455</span>, password=<span class="s">"password"</span>)
+
+<span class="k">def</span> on_current_program_scene_changed(data):
+    print(<span class="s">"live:"</span>, data.scene_name)
+
+ev.callback.register(on_current_program_scene_changed)
+input(<span class="s">"listening, press Enter to quit\n"</span>)</pre></div>
+  </div>
+</div>
+
+<div class="blk" id="raw">
+  <span class="eyebrow">03</span><h2>Raw <em>handshake</em></h2>
+  <p>No client library needed. Here is the whole v5 protocol in about 25 lines: Hello (op 0), a SHA-256 challenge, Identify (op 1), Identified (op 2), and then requests (op 6) and responses (op 7).</p>
+  <div class="dep" style="font:500 12.5px var(--mono);color:var(--dim)">uv run --with websockets raw.py</div>
+<pre><span class="k">import</span> asyncio, base64, hashlib, json, websockets
+
+<span class="k">def</span> b64sha(s: str) -&gt; str:
+    <span class="k">return</span> base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
+
+<span class="k">async def</span> main(url=<span class="s">"ws://127.0.0.1:4455"</span>, password=<span class="s">"password"</span>):
+    <span class="k">async with</span> websockets.connect(url) <span class="k">as</span> ws:
+        hello = json.loads(<span class="k">await</span> ws.recv())                  <span class="c"># op 0</span>
+        ident = {<span class="s">"rpcVersion"</span>: <span class="n">1</span>}
+        <span class="k">if</span> auth := hello[<span class="s">"d"</span>].get(<span class="s">"authentication"</span>):
+            secret = b64sha(password + auth[<span class="s">"salt"</span>])
+            ident[<span class="s">"authentication"</span>] = b64sha(secret + auth[<span class="s">"challenge"</span>])
+        <span class="k">await</span> ws.send(json.dumps({<span class="s">"op"</span>: <span class="n">1</span>, <span class="s">"d"</span>: ident}))      <span class="c"># Identify</span>
+        print(json.loads(<span class="k">await</span> ws.recv()))                     <span class="c"># op 2 Identified</span>
+
+        <span class="k">await</span> ws.send(json.dumps({<span class="s">"op"</span>: <span class="n">6</span>, <span class="s">"d"</span>: {<span class="s">"requestType"</span>: <span class="s">"GetStats"</span>, <span class="s">"requestId"</span>: <span class="s">"1"</span>}}))
+        <span class="k">while</span> (msg := json.loads(<span class="k">await</span> ws.recv()))[<span class="s">"op"</span>] != <span class="n">7</span>:
+            <span class="k">pass</span>                                                <span class="c"># skip events</span>
+        print(json.dumps(msg[<span class="s">"d"</span>][<span class="s">"responseData"</span>], indent=<span class="n">2</span>))
+
+asyncio.run(main())</pre>
+</div>
+
+<div class="blk" id="batch">
+  <span class="eyebrow">04</span><h2>Batch <em>requests</em></h2>
+  <p>op 8 sends several requests in one message, and OBS can run them on frame boundaries. <code>Sleep</code> with <code>sleepFrames</code> makes timed sequences: here, a cut to a scene, a wait of 60 frames, and a recording start.</p>
+<pre>{
+  <span class="s">"op"</span>: <span class="n">8</span>,
+  <span class="s">"d"</span>: {
+    <span class="s">"requestId"</span>: <span class="s">"intro"</span>,
+    <span class="s">"executionType"</span>: <span class="n">1</span>,            <span class="c">// SerialFrame</span>
+    <span class="s">"requests"</span>: [
+      { <span class="s">"requestType"</span>: <span class="s">"SetCurrentProgramScene"</span>, <span class="s">"requestData"</span>: { <span class="s">"sceneName"</span>: <span class="s">"Intro"</span> } },
+      { <span class="s">"requestType"</span>: <span class="s">"Sleep"</span>, <span class="s">"requestData"</span>: { <span class="s">"sleepFrames"</span>: <span class="n">60</span> } },
+      { <span class="s">"requestType"</span>: <span class="s">"StartRecord"</span> }
+    ]
+  }
+}</pre>
+  <p class="muted" style="font-size:15px">Execution types are in <a href="/websocket/#RequestBatchExecutionType">RequestBatchExecutionType</a>.</p>
+</div>
+
+<div class="blk" id="mcp">
+  <span class="eyebrow">05 · obs-studio-rust only</span><h2>MCP for <em>agents</em></h2>
+  <p>obs-studio-rust includes a Model Context Protocol server. An AI agent can list typed tools, start and stop outputs, inspect sources and wait for output, media or metric conditions, without screenshots or a GUI. It runs headless on Linux with Wayland or X11, and without either for control-only use.</p>
+<pre><span class="c"># from an obs-studio checkout: build the libobs-enabled app, then talk JSON-RPC over stdio</span>
+./mcp --build
+printf <span class="s">'%s\n'</span> <span class="s">'{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</span> | ./mcp --mcp
+
+<span class="c"># or serve on a unix socket and attach clients to it</span>
+./mcp --mcp-listen /run/user/1000/obs-control.sock
+./mcp --mcp-attach /run/user/1000/obs-control.sock</pre>
+  <p class="muted" style="font-size:15px">The repo's <code>.mcp.json</code> already wires this up for Claude Code. Details: <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/mcp.md">mcp.md</a> and <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/control-api.md">control-api.md</a> (tools, schemas, metrics).</p>
+</div>
+
+<div class="blk" id="scripts">
+  <span class="eyebrow">06</span><h2>OBS <em>scripts</em></h2>
+  <p>Python and Lua scripts load from <b>Tools → Scripts</b>. The scripting API is unchanged, so existing scripts keep working.</p>
+<pre><span class="k">import</span> obspython <span class="k">as</span> obs
+
+<span class="k">def</span> script_description():
+    <span class="k">return</span> <span class="s">"Logs every scene change."</span>
+
+<span class="k">def</span> on_event(event):
+    <span class="k">if</span> event == obs.OBS_FRONTEND_EVENT_SCENE_CHANGED:
+        scene = obs.obs_frontend_get_current_scene()
+        print(<span class="s">"scene:"</span>, obs.obs_source_get_name(scene))
+        obs.obs_source_release(scene)
+
+<span class="k">def</span> script_load(settings):
+    obs.obs_frontend_add_event_callback(on_event)</pre>
+  <p class="muted" style="font-size:15px">Reference: <a href="/ai/docs/docs-sphinx-scripting.md">scripting</a> and <a href="/ai/docs/docs-sphinx-reference-frontend-api.md">frontend API</a>.</p>
+</div>
+
+<div class="blk" id="plugins">
+  <span class="eyebrow">07</span><h2>Native <em>plugins</em></h2>
+  <p>The libobs C ABI is a compatibility contract. Plugins already compiled for OBS load in obs-studio-rust without a rebuild, and new plugins are written the same way.</p>
+  <div class="grid">
+    <a class="plate card" href="https://github.com/obs-rust/obs-plugintemplate"><span class="ico">C++</span><h3>Plugin template</h3><p>CMake skeleton with CI for Windows, macOS and Linux.</p><span class="go">Use template →</span></a>
+    <a class="plate card" href="/ai/docs/docs-sphinx-plugins.md"><span class="ico">.h</span><h3>Plugin guide</h3><p>Sources, outputs, encoders and services: the module lifecycle and the registration structs.</p><span class="go">Read →</span></a>
+    <a class="plate card" href="https://github.com/obs-rust/obs-avip"><span class="ico">RS</span><h3>obs-avip</h3><p>An NDI® source and output written in Rust, a drop-in for DistroAV. Use it as a reference plugin in Rust.</p><span class="go">View repo →</span></a>
+  </div>
+</div>
+
+<div class="blk" id="libs">
+  <span class="eyebrow">08</span><h2>Client <em>libraries</em></h2>
+  <p>Every v5 client works. A few well-maintained ones:</p>
+  <table class="libs"><thead><tr><th>Language</th><th>Library</th><th>Install</th></tr></thead><tbody>
+    <tr><td>Rust</td><td><a href="https://github.com/dnaka91/obws">obws</a></td><td><code>cargo add obws</code></td></tr>
+    <tr><td>JavaScript / TS</td><td><a href="https://github.com/obs-websocket-community-projects/obs-websocket-js">obs-websocket-js</a></td><td><code>npm i obs-websocket-js</code></td></tr>
+    <tr><td>Python</td><td><a href="https://github.com/aatikturk/obsws-python">obsws-python</a></td><td><code>uv add obsws-python</code></td></tr>
+    <tr><td>Python (async)</td><td><a href="https://github.com/IRLToolkit/simpleobsws">simpleobsws</a></td><td><code>uv add simpleobsws</code></td></tr>
+    <tr><td>Go</td><td><a href="https://github.com/andreykaipov/goobs">goobs</a></td><td><code>go get github.com/andreykaipov/goobs</code></td></tr>
+    <tr><td>C# / .NET</td><td><a href="https://github.com/BarRaider/obs-websocket-dotnet">obs-websocket-dotnet</a></td><td><code>dotnet add package obs-websocket-dotnet</code></td></tr>
+  </tbody></table>
+  <p class="muted" style="font-size:15px;margin-top:14px">Upstream's full list is in the <a href="https://github.com/obsproject/obs-websocket#language-apis">obs-websocket README</a>.</p>
+</div>
+    </div>
+  </div>
+</main>
+{{footer}}
+<script>
+document.querySelectorAll('.tabset').forEach(ts=>{const b=[...ts.querySelectorAll('.tabs button')],p=[...ts.querySelectorAll('.pane')];
+  b.forEach((x,i)=>x.addEventListener('click',()=>{b.forEach((y,j)=>y.setAttribute('aria-selected',i===j));p.forEach((y,j)=>y.classList.toggle('on',i===j));}));});
+document.querySelectorAll('pre').forEach(pre=>{const c=document.createElement('button');c.className='copy';c.textContent='copy';
+  c.onclick=()=>{navigator.clipboard.writeText(pre.innerText.replace(/\ncopy$/,'')).then(()=>{c.textContent='copied';setTimeout(()=>c.textContent='copy',1200);});};pre.appendChild(c);});
+</script>
+</body>
+</html>

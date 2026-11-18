@@ -192,6 +192,30 @@ def main() -> int:
     if len(re.findall(r'href="https://github.com/obs-rust/obs-studio/blob/[0-9a-f]{40}/README.md#L\d+"', home)) < 3:
         errs.append("index.html: fewer than 3 limits with a commit-pinned README receipt")
 
+    # nothing broken on any page (DESIGN.md P0 #17a): static guards for what the Chromium probe measures
+    css_sources = [(site / "assets/site.css").read_text()] + [
+        m for page in site.rglob("*.html") for m in re.findall(r"<style>(.*?)</style>", page.read_text(), re.S)]
+    for css in css_sources:
+        for m in re.finditer(r"(?:font:\s*(?:\d{3}\s+)?|font-size:\s*)(\d+(?:\.\d+)?)px", css):
+            if float(m[1]) < 12:
+                errs.append(f"css: font size {m[1]}px under the 12 px floor: {m[0]!r}")
+    if ":focus-visible" not in (site / "assets/site.css").read_text():
+        errs.append("site.css: no :focus-visible style")
+    for page in sorted(site.rglob("*.html")):
+        text = page.read_text()
+        rel = page.relative_to(site)
+        if len(re.findall(r"<h1[\s>]", text)) != 1:
+            errs.append(f"{rel}: not exactly one h1")
+        levels = [int(x) for x in re.findall(r"<h([1-6])[\s>]", re.sub(r"<script.*?</script>", "", text, flags=re.S))]
+        for prev, cur in zip(levels, levels[1:]):
+            if cur > prev + 1:
+                errs.append(f"{rel}: heading skips h{prev} -> h{cur}")
+                break
+        for m in re.finditer(r"(.{0,40})<table\b", text, re.S):
+            if not re.search(r'class="(tw|tblwrap)"[^>]*>\s*$', m[1]):
+                errs.append(f"{rel}: a <table> outside a scroll wrapper (.tw)")
+                break
+
     # agent router and manifest (DESIGN.md P0 #2)
     llms_text = (site / "llms.txt").read_text()
     router = re.findall(r"^- ([^:\n]+): \[(/[^\]]+)\]\(https://obs-rust\.com(/[^)]+)\) \((\d+) bytes\)$",

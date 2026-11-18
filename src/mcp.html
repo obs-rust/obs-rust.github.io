@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head:MCP server — give your agent OBS · OBS Studio Rust|obs-studio-rust ships a local Model Context Protocol server: {{n_tools}} typed tools and {{n_resources}} resources for scenes, sources, recording, streaming, screenshots and waits. Schema, client configs and example sessions.}}
+<link rel="alternate" type="application/json" title="MCP schema" href="/mcp/schema.json">
+<link rel="alternate" type="text/markdown" title="MCP reference (markdown)" href="/mcp/index.md">
+<style>
+.mh{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:40px;align-items:start;padding:64px 0 24px}
+.mh h1{font:900 clamp(46px,7.4vw,96px)/.88 var(--stencil);text-transform:uppercase;margin:4px 0 18px}
+.mh h1 em{font-style:normal;color:var(--rust)}
+.cfg{margin-top:20px}
+.cfg pre{font-size:13px}
+.hero-tx{padding:16px}
+.hero-tx h5{font:700 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+@media(max-width:940px){.mh{grid-template-columns:minmax(0,1fr)}}
+.modes,.cols,.reqs{display:grid;gap:14px;margin-top:22px}
+.modes{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cols{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cols b{font:800 44px/1 var(--stencil)}
+.cols .ro b{color:var(--cu-hi)}.cols .id b{color:var(--fg2)}.cols .mu b{color:var(--rust)}
+@media(max-width:760px){.modes,.cols{grid-template-columns:minmax(0,1fr)}}
+.reqs{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.reqs .card{padding:16px 18px}
+.reqs h3{font-size:16px}
+/* clients */
+.tabs{display:flex;border-bottom:1px solid var(--edge);flex-wrap:wrap;margin-top:18px}
+.tabs button{padding:10px 14px;background:transparent;border:0;border-bottom:2px solid transparent;color:var(--dim);font:700 12.5px var(--mono);cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--rust)}
+.pane{display:none}.pane.on{display:block}
+.pane pre{border-top:0;border-radius:0 0 6px 6px}
+.pane .note{font-size:14.5px;color:var(--dim);padding:10px 2px}
+/* transcripts */
+.tx{background:#0a0b0c;border:1px solid var(--edge);border-top:0;border-radius:0 0 6px 6px;padding:14px;display:grid;gap:6px;max-height:560px;overflow:auto}
+.hero-tx .tx{border-top:1px solid var(--edge);border-radius:6px;max-height:none}
+.msg{display:grid;grid-template-columns:18px minmax(0,1fr);gap:6px;font:500 12px/1.5 var(--mono)}
+.msg code{background:none;border:0;padding:0;color:#d9d6cf;word-break:break-word;white-space:pre-wrap;font-size:12px}
+.msg.a .dir{color:var(--rust-hi)}.msg.s .dir{color:var(--cu-hi)}
+.msg.s code{color:#a9d9c7}
+.why{font:500 13.5px var(--sans);color:var(--fg2);border-left:2px solid var(--rust);padding:2px 10px;margin-top:8px}
+.sum{font-size:15px;color:var(--fg2);padding:10px 2px}
+.cav{font-size:14px;color:var(--haz);border:1px dashed rgba(242,183,5,.4);padding:10px 12px;border-radius:4px;margin-top:10px}
+/* reference */
+.ref{display:grid;grid-template-columns:200px minmax(0,1fr);gap:36px;margin-top:22px}
+.rnav{position:sticky;top:76px;align-self:start;display:grid;gap:2px;font:600 13px var(--mono)}
+.rnav a{display:flex;justify-content:space-between;padding:6px 10px;color:var(--fg2);border-left:2px solid var(--edge)}
+.rnav a:hover{color:var(--fg);border-left-color:var(--rust)}
+.rnav a span{color:var(--dim)}
+.rtools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;position:sticky;top:60px;z-index:5;padding:12px 0;background:linear-gradient(180deg,var(--bg0) 70%,transparent)}
+.rtools input[type=search]{flex:1;min-width:200px}
+.rtools label{font:600 12px var(--mono);color:var(--fg2);display:flex;gap:6px;align-items:center;cursor:pointer}
+.grp{padding:0;margin-top:26px;scroll-margin-top:120px}
+.grp>h3{font:800 30px var(--stencil);color:var(--fg)}
+.tool{padding:18px 0;border-bottom:1px solid var(--edge);scroll-margin-top:130px}
+.tool.hide{display:none}
+.tool header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
+.tool .nm{font:700 19px var(--mono);color:var(--fg)}
+.tool:target{box-shadow:inset 3px 0 0 var(--rust);padding-left:14px;background:linear-gradient(90deg,rgba(232,99,26,.08),transparent 60%)}
+.tool p{color:var(--fg2);max-width:80ch}
+.tool .hints{font:500 12px var(--mono);color:var(--dim)}
+.tool h4{font:700 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:12px 0 4px}
+.tool .none{font-size:14px}
+.tool details{margin-top:8px}.tool details summary{font:600 12px var(--mono);color:var(--dim);cursor:pointer}
+.ft{width:100%;border-collapse:collapse;font-size:14.5px}
+.ft td{padding:7px 10px;border-top:1px solid #26292c;vertical-align:top}
+.ft td:first-child{white-space:nowrap;width:1%}
+.ft td:first-child .tag{margin-left:6px;font-size:9px}
+.ft .ty{font:500 12.5px var(--mono);color:var(--cu-hi);width:1%;white-space:nowrap}
+@media(max-width:900px){.ref{grid-template-columns:minmax(0,1fr)}.rnav{display:none}.ft .ty{white-space:normal}}
+.files{width:100%;border-collapse:collapse;font-size:15px;margin-top:14px}
+.files td{padding:9px 12px;border-bottom:1px solid var(--edge)}
+.files td:first-child{font:600 13.5px var(--mono);white-space:nowrap}
+</style>
+</head>
+<body>
+{{nav:mcp}}
+<main id="main" class="wrap">
+  <div class="mh">
+    <div>
+      <span class="eyebrow">Model Context Protocol · {{mcp_protocol}}</span>
+      <h1>Give your agent <em>OBS</em></h1>
+      <p class="lede">obs-studio-rust includes a local MCP server that calls libobs directly. It has {{n_tools}} typed tools, with input and output schemas and machine-readable errors. An agent can build scenes, go live, take screenshots and wait on real conditions, without screen-scraping or fixed sleeps.</p>
+      <div class="cfg">
+        <pre><span class="c"># 1. build once, inside an obs-studio checkout</span>
+git clone https://github.com/obs-rust/obs-studio && cd obs-studio
+./mcp --build
+
+<span class="c"># 2. hand it to your agent</span>
+claude mcp add obs -- "$PWD/mcp" --mcp</pre>
+      </div>
+      <p class="receipt">{{n_tools}} tools · {{n_resources}} resources · 0 prompts · <a href="https://github.com/obs-rust/obs-studio/blob/{{obs_sha}}/docs/rust-port/control-api.schema.json">control-api.schema.json</a> @ {{obs_sha_short}} · {{build_date}}</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+        <a class="btn primary" href="#clients">Client configs</a>
+        <a class="btn" href="/mcp/schema.json">schema.json ↓</a>
+        <a class="btn ghost" href="#reference">Tool reference</a>
+      </div>
+    </div>
+    <div class="plate hero-tx">
+      <h5>An agent session · schema-validated example</h5>
+      {{mcp_hero_tx}}
+    </div>
+  </div>
+
+  <section id="modes" style="padding-top:56px">
+    <span class="eyebrow">One choice to make</span>
+    <h2>Its own OBS, or <em>yours</em></h2>
+    <div class="modes">
+      <div class="plate card"><span class="tag cu">--mcp · stdio</span><h3>Its own OBS</h3><p>The server starts and owns a separate headless OBS instance. It's a sandbox apart from the OBS you have open, suited to building scenes, tests and CI. Closing stdin shuts it down cleanly.</p><pre>./mcp --mcp</pre></div>
+      <div class="plate card"><span class="tag haz">--mcp-attach · acts on your live app</span><h3>Your running OBS</h3><p>Build and install <code>obs-mcp-module</code>. It serves the same JSON-RPC on <code>$XDG_RUNTIME_DIR/obs-studio-rust/control.sock</code> (mode 0600) inside the running app, and the agent's changes go straight to your live scenes.</p><pre>./mcp --mcp-attach</pre></div>
+    </div>
+  </section>
+
+  <section id="can" style="padding-top:64px">
+    <span class="eyebrow">By annotation</span>
+    <h2>Look, switch, <em>change</em></h2>
+    <p class="lede">Every tool declares MCP annotations, so a client can grant "look, don't touch" by policy. A <a href="/mcp/read-only-allowlist.json">read-only allowlist</a> is generated for Claude Code.</p>
+    <div class="cols">
+      <div class="plate card ro"><b>{{n_ro}}</b><h3>Read-only</h3><p>Lists, status, screenshots, stats and waits. Safe to allow outright.</p></div>
+      <div class="plate card id"><b>{{n_idem}}</b><h3>Idempotent writes</h3><p>Start/stop outputs, switch scenes, toggle visibility. Repeating a call gives the same state.</p></div>
+      <div class="plate card mu"><b>{{n_mut}}</b><h3>Changes state</h3><p>Create, remove and reconfigure scenes, sources and items. Put these behind a human.</p></div>
+    </div>
+  </section>
+
+  <section id="clients" style="padding-top:64px">
+    <span class="eyebrow">Client configs</span>
+    <h2>Plug it <em>in</em></h2>
+    <p class="lede">Every client launches the <code>mcp</code> script in your checkout. It sets up the graphics and plugin paths, so point clients at it rather than at the binary. Use absolute paths.</p>
+    <div class="tabset">
+      <div class="tabs" role="tablist"><button role="tab" aria-selected="true">Claude Code</button><button role="tab" aria-selected="false">Cursor</button><button role="tab" aria-selected="false">VS Code</button><button role="tab" aria-selected="false">Claude Desktop</button><button role="tab" aria-selected="false">Attach</button><button role="tab" aria-selected="false">Raw</button></div>
+      <div class="pane on"><pre>claude mcp add obs -- /path/to/obs-studio/mcp --mcp
+
+<span class="c"># or just open the checkout: its .mcp.json already declares the server</span>
+{{mcp_json_pretty}}
+
+<span class="c"># optional: allow only read-only tools without prompting (.claude/settings.json)</span>
+{"permissions":{"allow":{{ro_allow}}}}</pre></div>
+      <div class="pane"><p class="note"><code>~/.cursor/mcp.json</code> or <code>.cursor/mcp.json</code></p><pre>{"mcpServers":{"obs":{"command":"/path/to/obs-studio/mcp","args":["--mcp"]}}}</pre></div>
+      <div class="pane"><p class="note"><code>.vscode/mcp.json</code> in the obs-studio checkout</p><pre>{"servers":{"obs":{"type":"stdio","command":"${workspaceFolder}/mcp","args":["--mcp"]}}}</pre></div>
+      <div class="pane"><p class="note">The server builds and runs on Linux today (see requirements). Claude Desktop ships for macOS and Windows, so this config only helps where Desktop runs on the same Linux machine as the build.</p><pre>{"mcpServers":{"obs":{"command":"/path/to/obs-studio/mcp","args":["--mcp"]}}}</pre></div>
+      <div class="pane"><p class="note">Act on a running OBS that has <code>obs-mcp-module</code> loaded. The socket argument is optional and defaults to the module's socket.</p><pre>{"mcpServers":{"obs-live":{"command":"/path/to/obs-studio/mcp","args":["--mcp-attach"]}}}</pre></div>
+      <div class="pane"><p class="note">Newline-delimited JSON-RPC 2.0 over stdio. No client needed.</p><pre>printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | ./mcp --mcp</pre></div>
+    </div>
+  </section>
+
+  <section id="requirements" style="padding-top:64px">
+    <span class="eyebrow">Honest requirements</span>
+    <h2>What it <em>needs</em></h2>
+    <div class="reqs">
+      <div class="plate card"><h3>Local only</h3><p>stdio, or a unix socket with mode 0600. No network listener, no hosted endpoint.</p></div>
+      <div class="plate card"><h3>Built from source</h3><p><code>./mcp --build</code> needs <code>uv</code>, <code>soldr</code> and the native libobs build dependencies. On NixOS the launcher enters <code>ci/mcp-shell.nix</code> itself. No release package includes the server yet.</p></div>
+      <div class="plate card"><h3>Linux first</h3><p>The launcher builds EGL/Wayland OpenGL, linux-v4l2, obs-ffmpeg and obs-x264. The socket transport is unix-only, and Windows named pipes are tracked in <a href="https://github.com/obs-rust/obs-studio/issues/4455">#4455</a>. macOS is untested.</p></div>
+      <div class="plate card"><h3>A display for video</h3><p>Video and screenshots need a Wayland compositor or X server; headless Weston works. Control-only use runs with neither. In upstream's words: "A successful tools/list response alone does not prove video or device readiness."</p></div>
+      <div class="plate card"><h3>Configured outputs</h3><p>Record and stream tools use the outputs and service you have configured. No tool configures them yet.</p></div>
+      <div class="plate card"><h3>Annotations are advice</h3><p>Hints describe intent, and your client still enforces policy. Use the allowlist above for read-only agents.</p></div>
+    </div>
+    <p class="muted" style="margin-top:14px;font-size:15px">Sources: <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/mcp.md">mcp.md</a> · <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/control-api.md">control-api.md</a></p>
+  </section>
+
+  <section id="sessions" style="padding-top:64px">
+    <span class="eyebrow">Example sessions</span>
+    <h2>How an agent <em>uses it</em></h2>
+    <p class="lede">Each call's arguments and result are checked against the real input, output and error schemas at build time; values are illustrative. Each session is also published as <code>.jsonl</code>.</p>
+    {{mcp_sessions}}
+  </section>
+
+  <section id="reference" style="padding-top:64px">
+    <span class="eyebrow">Tool reference · generated</span>
+    <h2>{{n_tools}} <em>tools</em></h2>
+    <div class="ref">
+      <nav class="rnav" aria-label="Tool groups">{{mcp_ref_nav}}<a href="#resources">Resources <span>{{n_resources}}</span></a><a href="#files">Files</a></nav>
+      <div>
+        <div class="rtools"><input type="search" id="tq" placeholder="Filter tools…" aria-label="Filter tools"><label><input type="checkbox" id="ro"> read-only only</label><span class="count muted" id="tc" style="font:500 12px var(--mono)"></span></div>
+        {{mcp_ref}}
+        <section class="grp" id="resources"><h3>Resources</h3><p class="muted">Read state without a tool call: <code>resources/list</code>, then <code>resources/read</code>.</p>{{mcp_resources}}</section>
+        <section class="grp" id="files"><h3>Machine-readable</h3>
+          <table class="files"><tbody>
+            <tr><td><a href="/mcp/schema.json">/mcp/schema.json</a></td><td>Everything: server info, tools (a pre-fetched <code>tools/list</code>), resources and the ToolError schema · {{schema_kb}} KB</td></tr>
+            <tr><td><a href="/mcp/tools.json">/mcp/tools.json</a></td><td>Exactly the <code>tools/list</code> result shape</td></tr>
+            <tr><td><a href="/mcp/resources.json">/mcp/resources.json</a></td><td>Exactly the <code>resources/list</code> result shape</td></tr>
+            <tr><td>/mcp/tools/&lt;name&gt;.json</td><td>One tool, for a cheap fetch</td></tr>
+            <tr><td><a href="/mcp/index.md">/mcp/index.md</a></td><td>This page as markdown, also in <a href="/llms.txt">llms.txt</a> and the <a href="/ai/">AI corpus</a></td></tr>
+            <tr><td><a href="/mcp/server.json">/mcp/server.json</a></td><td>MCP registry manifest (2025-12-11 schema, validated at build). Not yet submitted: the registry needs an installable package, and the server is built from source today.</td></tr>
+            <tr><td><a href="/mcp/mcp.json">/mcp/mcp.json</a></td><td>The repository's <code>.mcp.json</code>, verbatim</td></tr>
+          </tbody></table>
+        </section>
+      </div>
+    </div>
+  </section>
+</main>
+{{footer}}
+<script>
+document.querySelectorAll('.tabset').forEach(ts=>{const b=[...ts.querySelectorAll('.tabs button')],p=[...ts.querySelectorAll(':scope>.pane')];
+  b.forEach((x,i)=>x.addEventListener('click',()=>{b.forEach((y,j)=>y.setAttribute('aria-selected',i===j));p.forEach((y,j)=>y.classList.toggle('on',i===j));}));});
+document.querySelectorAll('pre').forEach(pre=>{const c=document.createElement('button');c.className='copy';c.textContent='copy';
+  c.onclick=()=>{const t=pre.cloneNode(true);t.querySelector('.copy')?.remove();navigator.clipboard.writeText(t.innerText).then(()=>{c.textContent='copied';setTimeout(()=>c.textContent='copy',1200);});};pre.appendChild(c);});
+(()=>{const q=document.getElementById('tq'),ro=document.getElementById('ro'),tc=document.getElementById('tc'),ts=[...document.querySelectorAll('.tool')];
+const f=()=>{const w=q.value.toLowerCase().split(/\s+/).filter(Boolean);let n=0;for(const t of ts){const ok=(!ro.checked||t.dataset.ro==='true')&&w.every(x=>t.dataset.search.includes(x));t.classList.toggle('hide',!ok);if(ok)n++;}tc.textContent=n+' / '+ts.length;};
+q.addEventListener('input',f);ro.addEventListener('change',f);f();})();
+</script>
+</body>
+</html>

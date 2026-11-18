@@ -34,6 +34,10 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*.md
+            /.mcp.json
+            /mcp
+            /rust/obs-mcp/Cargo.toml
+            /rust/obs-mcp/src/
             /docs/
             !/docs/images/
             !/docs/rust-port/native-graph/

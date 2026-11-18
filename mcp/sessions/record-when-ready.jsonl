@@ -1,0 +1,10 @@
+{"order":1,"title":"Start recording when the scene is ready","summary":"Switch scenes, wait for the camera to go live, then record. Writes only after it has looked."}
+{"from":"agent","note":"Handshake. The server speaks MCP 2025-06-18.","msg":{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"agent","version":"1"}}}}
+{"from":"server","msg":{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","serverInfo":{"name":"obs-mcp","version":"0.1.0"},"capabilities":{"tools":{},"resources":{}}}}}
+{"from":"agent","msg":{"jsonrpc":"2.0","method":"notifications/initialized"}}
+{"from":"agent","note":"Put the interview scene on program.","msg":{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"scene_set_current","arguments":{"name":"Interview"}}}}
+{"from":"server","msg":{"jsonrpc":"2.0","id":2,"result":{"structuredContent":{"name":"Interview"},"isError":false}}}
+{"from":"agent","note":"Don't guess with a sleep: block until the camera source is actually active, for up to 10 s.","msg":{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"wait_for","arguments":{"condition":{"type":"source_active","name":"Camera"},"timeout_ms":10000}}}}
+{"from":"server","msg":{"jsonrpc":"2.0","id":3,"result":{"structuredContent":{"satisfied":true,"elapsed_ms":180,"last_value":{"kind":"source","present":true,"active":true}},"isError":false}}}
+{"from":"agent","note":"The camera is live. Start recording and wait until the output is really active.","msg":{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"record_start","arguments":{"wait":true,"timeout_ms":5000}}}}
+{"from":"server","msg":{"jsonrpc":"2.0","id":4,"result":{"structuredContent":{"active":true},"isError":false}}}

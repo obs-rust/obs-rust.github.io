@@ -19,7 +19,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from models import CorpusFile, Manifest, McpSchemaFile, WsProtocol  # noqa: E402
+from models import CorpusFile, Manifest, McpSchemaFile, ReplayInline, WsProtocol  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 EXPECTED = ["index.html", "404.html", "websocket/index.html", "examples/index.html", "ai/index.html",
@@ -231,6 +231,7 @@ def main() -> int:
 
     errs.extend(check_one_system(site))
     errs.extend(check_object_first(site))
+    errs.extend(check_replay(site))
 
     # agent router and manifest (DESIGN.md P0 #2)
     llms_text = (site / "llms.txt").read_text()
@@ -395,6 +396,36 @@ def check_object_first(site: Path) -> list[str]:
     home = (site / "index.html").read_text() if (site / "index.html").is_file() else ""
     if '<div class="chan" id="stable">' not in home or '<details class="chan" id="beta">' not in home:
         errs.append("index.html: the stable files must stay open and the beta files close")
+    return errs
+
+
+REPLAY_OPS = (0, 2, 6, 7)  # Hello, Identified, Request, RequestResponse: what S4 looks for in #log
+REPLAY_DATA = re.compile(r'<script type="application/json" id="replay-data">(.*?)</script>', re.S)
+
+
+def check_replay(site: Path) -> list[str]:
+    """S4 (DESIGN.md §9, backlog #29): /websocket/ inlines a scripted transcript that holds ops 0, 2, 6 and 7,
+    labelled "scripted" with an obs-studio-rust-v* tag, never "recorded"."""
+    f = site / "websocket/index.html"
+    if not f.is_file():
+        return []
+    text = f.read_text()
+    m = REPLAY_DATA.search(text)
+    if m is None:
+        return ["websocket: no inlined replay transcript (<script id=\"replay-data\">)"]
+    rp = ReplayInline.model_validate_json(m.group(1))
+    errs: list[str] = []
+    ops = {r.op for r in rp.rows}
+    if lack := [o for o in REPLAY_OPS if o not in ops]:
+        errs.append(f"websocket: the replay transcript lacks ops {' '.join(map(str, lack))}")
+    if not rp.tag.startswith("obs-studio-rust-v"):
+        errs.append(f"websocket: the replay names {rp.tag!r}, not an obs-studio-rust-v* release")
+    con = text[text.find('id="console"'):]
+    con = con[:con.find("</section>")]
+    if not re.search(r"scripted[^<\n]*" + re.escape(rp.tag), con):
+        errs.append("websocket: the console does not label the replay scripted with its release tag")
+    if re.search(r"\brecorded\b", con, re.I):
+        errs.append("websocket: the console calls the scripted replay recorded")
     return errs
 
 

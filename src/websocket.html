@@ -45,18 +45,35 @@ details>summary{cursor:pointer}
 @media(max-width:900px){.ws{grid-template-columns:minmax(0,1fr)}.side{display:none}}
 
 /* console */
-.con{margin-top:var(--s-4);padding:var(--s-3);display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.con{margin-top:var(--s-4);padding:var(--s-3);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:20px}
 .con .con-h{display:flex;align-items:center;gap:10px;font:700 var(--t-17) var(--mono);text-transform:none;letter-spacing:0;margin:0}
 .con .st{font:600 var(--t-label) var(--mono);padding:3px 8px;border-radius:var(--r-ctl);border:1px solid var(--edge2);color:var(--dim)}
 .con .st.ok{color:#000;background:var(--cu-hi);border-color:var(--cu-hi)}
 .con .st.err{color:#fff;background:#a32020;border-color:#a32020}
 .con .row{display:flex;gap:8px;margin:12px 0}
 .con .intro{font-size:var(--t-ui);margin-top:6px}
-.con textarea{min-height:200px;font-size:var(--t-13);resize:vertical}
+.con textarea{min-height:220px;font-size:var(--t-13);resize:vertical}
 .log{background:#0a0b0c;border:1px solid var(--edge);border-radius:var(--r-plate);padding:12px;height:330px;overflow:auto;font:500 var(--t-12)/1.5 var(--mono);white-space:pre-wrap;word-break:break-word}
 .log .o{color:#ffb98c}.log .i{color:#9fe0c8}.log .e{color:#ff8080}.log .m{color:var(--dim)}
+/* the log as a conversation: one row per frame, direction and op name over its indented JSON */
+.log .fr{margin:0 0 6px;padding:6px 10px;border-left:2px solid var(--edge2);background:rgba(255,255,255,.02);white-space:normal}
+.log .fr.out{border-left-color:var(--rust)}.log .fr.in{border-left-color:var(--cu)}
+.log .fh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.log .fh b{font-weight:700;color:var(--fg)}.log .fr.out .dir{color:#ffb98c}.log .fr.in .dir{color:#9fe0c8}.log .fh .opn{color:var(--dim)}
+.log .fn{display:none;margin:2px 0 4px;color:var(--fg2);font:400 var(--t-12)/1.45 var(--mono)}
+.log .fr.now .fn{display:block}
+.log .fr pre{margin:0;padding:0;background:none;border:0;font:500 var(--t-12)/1.45 var(--mono);color:var(--fg2);white-space:pre-wrap;word-break:break-word}
+.con .lh{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
+.con .lh label{margin-right:auto}
+.rp{padding:5px 10px;min-height:28px;border:1px solid var(--haz);color:var(--haz);background:transparent;border-radius:var(--r-ctl);font:700 var(--t-label) var(--mono);cursor:pointer}
+.rp:hover{background:var(--haz);color:#000}.rp:disabled{opacity:.45;cursor:default;background:transparent;color:var(--haz)}
+.con .st.rp-on{color:var(--haz);border-color:var(--haz)}
+#console{scroll-margin-top:80px}#demo{scroll-margin-top:110px}
+.con .src{color:var(--haz);font:600 var(--t-13)/1.5 var(--mono);margin-top:10px}
 .con label{font:600 var(--t-label) var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-@media(max-width:900px){.con{grid-template-columns:minmax(0,1fr)}}
+/* the log fills the plate beside the form, so a played session shows four frames or more */
+.con .tr{display:flex;flex-direction:column}.con .tr .log{flex:1 1 0;height:0;min-height:330px}
+@media(max-width:900px){.con{grid-template-columns:minmax(0,1fr)}.con .tr .log{flex:none;height:420px}}
 .ws-meta{margin-top:var(--s-4)}
 .ws-meta .meta{display:flex;flex-wrap:wrap;gap:8px}
 .proto .card{padding:16px 18px;gap:4px}
@@ -73,15 +90,16 @@ details>summary{cursor:pointer}
   </div>
 
   <section class="plate con" id="console" data-object>
-    <div>
+    <div id="demo">
       <h2 class="con-h">Live console <span class="st" id="st">disconnected</span></h2>
-      <p class="muted intro">Connect straight to your own OBS: enable it under <b>Tools → WebSocket Server Settings</b>. Everything stays between this tab and your machine. The password only feeds the SHA-256 challenge and is never stored.</p>
+      <p class="muted intro">Connect straight to your own OBS: enable it under <b>Tools → WebSocket Server Settings</b>. Everything stays between this tab and your machine. The password only feeds the SHA-256 challenge and is never stored. No OBS at hand? <a href="#demo">Replay a session</a>.</p>
+      <p class="src" id="src" hidden>Replay, no socket open: scripted from the protocol of {{replay_tag}}, written by hand and checked against protocol.json.</p>
       <div class="row"><input id="url" type="text" value="ws://127.0.0.1:4455" aria-label="WebSocket URL"><input id="pw" type="password" placeholder="password (optional)" aria-label="Password"></div>
       <div class="row"><button class="btn primary" id="connect">Connect</button><button class="btn ghost" id="send" disabled>Send ▸</button></div>
       <label for="msg">Request (op 6)</label>
       <textarea id="msg" spellcheck="false">{"op":6,"d":{"requestType":"GetVersion","requestId":"1"}}</textarea>
     </div>
-    <div><label>Traffic</label><div class="log" id="log" aria-live="polite"><span class="m">Press Connect. Click "Try ▸" on any request below to load it here.</span></div></div>
+    <div class="tr"><div class="lh"><label>Traffic</label><button class="rp" id="replay" type="button">Replay a session</button><button class="rp" id="step" type="button">Step ▸</button></div><div class="log" id="log" aria-live="polite"><span class="m">Press Connect, or Replay a session to watch one scripted exchange. Click "Try ▸" on any request below to load it here.</span></div></div>
   </section>
 
   <div class="ws-meta">
@@ -110,6 +128,7 @@ details>summary{cursor:pointer}
   </div>
 </main>
 {{footer}}
+<script type="application/json" id="replay-data">{{replay_json}}</script>
 <script>
 (()=>{
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -125,25 +144,54 @@ apply();
 // console
 const log=$('#log'),st=$('#st'),msg=$('#msg'),send=$('#send'),btn=$('#connect');let ws=null,rid=1;
 const line=(cls,txt)=>{const s=document.createElement('span');s.className=cls;s.textContent=txt+'\n';log.appendChild(s);log.scrollTop=log.scrollHeight;};
+const RP=JSON.parse($('#replay-data').textContent),OPS=RP.ops;
+// indented JSON that keeps short objects and arrays on one line
+const inl=v=>v===null||typeof v!=='object'?JSON.stringify(v):Array.isArray(v)?'['+v.map(inl).join(', ')+']':'{'+Object.entries(v).map(([k,x])=>JSON.stringify(k)+': '+inl(x)).join(', ')+'}';
+let cols=64;const pj=(v,ind='')=>{const s=inl(v);if(v===null||typeof v!=='object'||s.length+ind.length<=cols)return s;const n=ind+'  ';
+  return Array.isArray(v)?'[\n'+v.map(x=>n+pj(x,n)).join(',\n')+'\n'+ind+']':'{\n'+Object.entries(v).map(([k,x])=>n+JSON.stringify(k)+': '+pj(x,n)).join(',\n')+'\n'+ind+'}';};
+// as wide as the log: {"op": n, "d": {...}} with the envelope on its first line
+const pm=m=>{cols=Math.max(40,Math.floor((log.clientWidth-40)/7.3));return m&&typeof m==='object'&&'op' in m&&'d' in m&&Object.keys(m).length===2?'{"op": '+JSON.stringify(m.op)+', "d": '+pj(m.d)+'}':pj(m);};
+// one row per frame: data-op, direction, op name, the JSON; the newest row shows its note, the others keep it as a tooltip
+const frame=(out,m,note,shown)=>{const r=document.createElement('div'),h=document.createElement('div'),pre=document.createElement('pre');
+  r.className='fr '+(out?'out':'in');r.dataset.op=m.op;h.className='fh';
+  h.innerHTML='<span class="dir"></span><b></b><span class="opn"></span>';h.children[0].textContent=out?'client → server':'server → client';
+  h.children[1].textContent=OPS[m.op]||'op';h.children[2].textContent='op '+m.op;r.append(h);
+  if(note){const p=document.createElement('p');p.className='fn';p.textContent=note;r.append(p);r.title=note;}
+  pre.textContent=pm(shown||m);log.querySelectorAll('.fr.now').forEach(x=>x.classList.remove('now'));r.classList.add('now');r.append(pre);log.append(r);log.scrollTop=log.scrollHeight;};
 const status=(t,c)=>{st.textContent=t;st.className='st '+(c||'');};
 async function sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return btoa(String.fromCharCode(...new Uint8Array(b)));}
-btn.onclick=()=>{if(ws){ws.close();return;}log.textContent='';
+btn.onclick=()=>{if(ws){ws.close();return;}stopReplay();log.textContent='';
   try{ws=new WebSocket($('#url').value.trim());}catch(e){line('e',String(e));return;}
   status('connecting…');btn.textContent='Disconnect';
   ws.onmessage=async ev=>{let m;try{m=JSON.parse(ev.data);}catch{line('i','← '+ev.data);return;}
-    line('i','← '+JSON.stringify(m,null,1));
+    frame(false,m);
     if(m.op===0){const d={rpcVersion:1,eventSubscriptions:(1<<11)-1};
       if(m.d.authentication){const{challenge,salt}=m.d.authentication;d.authentication=await sha((await sha($('#pw').value+salt))+challenge);}
-      const o={op:1,d};line('o','→ '+JSON.stringify(o).replace(/"authentication":"[^"]+"/,'"authentication":"…"'));ws.send(JSON.stringify(o));}
+      const o={op:1,d};frame(true,o,'',d.authentication?{op:1,d:{...d,authentication:'…'}}:o);ws.send(JSON.stringify(o));}
     if(m.op===2){status('identified · rpc '+m.d.negotiatedRpcVersion,'ok');send.disabled=false;}};
   ws.onerror=()=>{line('e','connection error. Is OBS running with the WebSocket server enabled? Some browsers block ws:// to a LAN IP from an https page; 127.0.0.1/localhost is allowed.');status('error','err');};
   ws.onclose=e=>{line('m',`closed (${e.code}${e.reason?': '+e.reason:''})`);if(st.textContent!=='error')status('disconnected');ws=null;send.disabled=true;btn.textContent='Connect';};};
 send.onclick=()=>{if(!ws)return;let o;try{o=JSON.parse(msg.value);}catch(e){line('e','invalid JSON: '+e.message);return;}
-  if(o.op===6&&o.d){o.d.requestId=String(++rid);msg.value=JSON.stringify(o);}line('o','→ '+JSON.stringify(o));ws.send(JSON.stringify(o));};
+  if(o.op===6&&o.d){o.d.requestId=String(++rid);msg.value=JSON.stringify(o);}frame(true,o);ws.send(JSON.stringify(o));};
 msg.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))send.click();});
 $$('.try').forEach(b=>b.addEventListener('click',()=>{const it=b.closest('.it');const pre=it.querySelector('.exm pre');
   msg.value=pre?JSON.stringify(JSON.parse(pre.textContent)):JSON.stringify({op:6,d:{requestType:b.dataset.req,requestId:'1'}});
   $('#console').scrollIntoView({behavior:'smooth'});msg.focus();}));
+// replay (DESIGN.md §9): the scripted transcript into the log, timed, with replay and step; no socket opens
+const rpBtn=$('#replay'),stepBtn=$('#step'),src=$('#src'),still=matchMedia('(prefers-reduced-motion: reduce)').matches;let rp=-1,timer=0;
+function stopReplay(){clearTimeout(timer);rp=-1;src.hidden=true;stepBtn.disabled=false;}
+function show(){const f=RP.rows[rp++];frame(f.dir.startsWith('client'),f.message,f.note);
+  if(f.op===6)msg.value=JSON.stringify(f.message);
+  if(rp>=RP.rows.length)stepBtn.disabled=true;}
+function begin(){if(ws)return false;clearTimeout(timer);log.textContent='';rp=0;src.hidden=false;stepBtn.disabled=false;status('replay · scripted','rp-on');return true;}
+function play(){if(!begin())return;if(still){while(rp<RP.rows.length)show();return;}
+  const tick=()=>{show();if(rp<RP.rows.length)timer=setTimeout(tick,380);};timer=setTimeout(tick,150);}
+rpBtn.onclick=play;
+stepBtn.onclick=()=>{clearTimeout(timer);if(rp<0&&!begin())return;if(rp<RP.rows.length)show();};
+const demo=()=>{if(location.hash==='#demo'&&!ws){$('#console').scrollIntoView({block:'start'});play();}};
+addEventListener('hashchange',demo);demo();
+addEventListener('load',()=>{if(location.hash==='#demo')$('#console').scrollIntoView({block:'start'});});
+addEventListener('click',e=>{if(e.target.closest('a[href="#demo"]')&&location.hash==='#demo')demo();});
 // a #Name link opens its entry, on load, on hashchange and when the same link is followed again
 const openHash=()=>{const t=location.hash.length>1&&document.getElementById(decodeURIComponent(location.hash.slice(1)));
   const d=t&&t.closest('details.it');if(d&&!d.open){d.open=true;t.scrollIntoView();}};

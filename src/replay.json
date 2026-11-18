@@ -1,0 +1,32 @@
+{
+  "about": "A scripted obs-websocket v5 session for the console replay on /websocket/#demo. It was written by hand against protocol.json, not captured from a running release. tools/build.py checks every frame against protocol.json and recomputes the Identify authentication string from the password, salt and challenge below.",
+  "password": "obs-rust-demo",
+  "frames": [
+    {
+      "note": "The server speaks first. authentication is present, so this server needs a password.",
+      "message": {"op": 0, "d": {"obsStudioVersion": "33.0.0", "obsWebSocketVersion": "5.7.5", "rpcVersion": 1,
+        "authentication": {"challenge": "NHb2u1ipWPoL1olrDgmqqhb3Gn2nb5B6m9bYRaiXCLE=", "salt": "wXyvXGxgmNE0ZReZHxhZ7NSpz2V29GkrpFHsDcUJ4lk="}}}
+    },
+    {
+      "note": "authentication = base64(sha256(base64(sha256(password + salt)) + challenge)), here with the password \"obs-rust-demo\". eventSubscriptions 4 is the Scenes bit.",
+      "message": {"op": 1, "d": {"rpcVersion": 1, "authentication": "OMQR2/qfG3bewUcM7doix0Tc6CzfQMg0rUHjZ5aInFc=", "eventSubscriptions": 4}}
+    },
+    {
+      "note": "Accepted. Requests may follow.",
+      "message": {"op": 2, "d": {"negotiatedRpcVersion": 1}}
+    },
+    {
+      "note": "requestId is the client's own; the response carries it back. This one switches the program output to another scene.",
+      "message": {"op": 6, "d": {"requestType": "SetCurrentProgramScene", "requestId": "1", "requestData": {"sceneName": "Gameplay"}}}
+    },
+    {
+      "note": "requestStatus code 100 is Success. No responseData: this request only reports its status.",
+      "message": {"op": 7, "d": {"requestType": "SetCurrentProgramScene", "requestId": "1", "requestStatus": {"result": true, "code": 100}}}
+    },
+    {
+      "note": "Every client subscribed to Scenes hears the switch.",
+      "message": {"op": 5, "d": {"eventType": "CurrentProgramSceneChanged", "eventIntent": 4,
+        "eventData": {"sceneName": "Gameplay", "sceneUuid": "06c2092e-3568-4c39-8842-ef74ae1c012f"}}}
+    }
+  ]
+}

@@ -247,7 +247,7 @@ def render_downloads(chans: list[Channel]) -> str:
         date = (ch.rel.published_at or "")[:10]
         out.append(f'<div class="chan" id="{ch.name.lower()}"><h3><b>{ch.name}</b> <a href="{esc(ch.rel.html_url)}">'
                    f'{esc(ch.rel.name or ch.rel.tag_name)}</a> <span>{date}</span></h3><p class="muted">{esc(ch.note)}</p>'
-                   f'<div class="dl">{"".join(cards)}</div></div>')
+                   f'<div class="grid g3 dl">{"".join(cards)}</div></div>')
     return "".join(out)
 
 
@@ -606,7 +606,7 @@ def nav(active: str) -> str:
 FOOTER = """<footer class="site"><div class="wrap">
 <div class="cols">
 <div><a class="brand" href="/"><img src="/assets/obs-rust-badge.svg" alt="" width="34" height="34"><span>OBS <em>Rust</em></span></a>
-<p class="muted" style="margin-top:12px;font-size:15px;max-width:40ch">An independent, hybrid Rust/C/C++ rewrite of OBS Studio. Judged by the work.</p></div>
+<p class="muted blurb">An independent, hybrid Rust/C/C++ rewrite of OBS Studio. Judged by the work.</p></div>
 <div><h2>Project</h2><ul>
 <li><a href="https://github.com/obs-rust/obs-studio">obs-studio</a></li>
 <li><a href="https://github.com/obs-rust/obs-studio/releases">Releases</a></li>

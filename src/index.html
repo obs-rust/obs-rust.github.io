@@ -4,104 +4,100 @@
 {{head:OBS Studio Rust — the OBS you know, rebuilt in Rust|An independent, hybrid Rust/C/C++ rewrite of OBS Studio. Same libobs C ABI, same obs-websocket v5 protocol, same plugins, plus {{n_fixed}} upstream bugs fixed. Beta downloads for Windows, macOS and Linux.}}
 <style>
 /* hero */
-.hero{position:relative;padding:44px 0 40px}
-.hero .wrap{display:grid;grid-template-columns:minmax(0,.74fr) minmax(0,1.26fr);gap:40px;align-items:center}
-.hero h1{font:900 clamp(38px,5.2vw,72px)/.9 var(--stencil);text-transform:uppercase;letter-spacing:.005em;margin:6px 0 22px}
+.hero{position:relative;padding-bottom:var(--s-5)}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,.74fr) minmax(0,1.26fr);gap:var(--s-5);align-items:center}
 .hero h1 .row{display:block}
 .hero h1 .out{color:#5d646a}
-.hero .lede{margin-bottom:28px}
-.hero .cta{display:flex;flex-wrap:wrap;gap:12px}
-.hero .rel{margin-top:22px;font:500 13px var(--mono);color:var(--dim);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--cu-hi);box-shadow:0 0 10px var(--cu-hi);display:inline-block}
-@media(max-width:940px){.hero .wrap{grid-template-columns:minmax(0,1fr);gap:18px}.hero{padding-top:24px}
+.hero .actions{margin-top:0}
+.hero .lede{margin-bottom:var(--s-4)}
+.hero .rel{margin-top:var(--s-3);font:500 var(--t-13) var(--mono);color:var(--dim);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.dot{width:8px;height:8px;border-radius:var(--r-light);background:var(--cu-hi);box-shadow:0 0 10px var(--cu-hi);display:inline-block}
+@media(max-width:940px){.hero .wrap{grid-template-columns:minmax(0,1fr);gap:18px}
   .hero .wrap>div:first-child{display:contents}
-  .hero .eyebrow{order:1}.hero h1{order:2;margin-bottom:0}.hero .mon{order:3;padding:6px;margin:0 -16px}.hero .cta{order:4}.hero .lede{order:5}.hero .rel{order:6}}
-.caution{margin:18px 0 12px;padding:12px 14px;border:1px solid rgba(242,183,5,.5);border-left:4px solid var(--haz);border-radius:4px;background:rgba(242,183,5,.06);font-size:15px}
-.caution b{color:var(--haz);font:700 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;margin-right:8px}
+  .hero .eyebrow{order:1}.hero h1{order:2;margin-bottom:0}.hero .mon{order:3;padding:6px;margin:0 -16px}.hero .actions{order:4}.hero .lede{order:5}.hero .rel{order:6}}
+.caution{margin:18px 0 12px;padding:12px 14px;border:1px solid rgba(242,183,5,.5);border-left:4px solid var(--haz);border-radius:var(--r-ctl);background:rgba(242,183,5,.06);font-size:var(--t-ui)}
+.caution b{color:var(--haz);font:700 var(--t-label) var(--mono);letter-spacing:.14em;text-transform:uppercase;margin-right:8px}
 
 /* program monitor: the real main window, framed */
-.mon{margin:0;position:relative;padding:12px;border-radius:10px;background:linear-gradient(180deg,#2a2e31,#17191b);border:1px solid var(--edge2);box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px #000,inset 0 1px 0 rgba(255,255,255,.08)}
-.mon .bar{display:flex;align-items:center;gap:10px;font:600 12px var(--mono);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;padding:0 4px 10px}
-.mon .bar .tally{width:9px;height:9px;border-radius:50%;background:#3a3f43;box-shadow:inset 0 1px 1px rgba(0,0,0,.6)}
+.mon{margin:0;position:relative;padding:12px;border-radius:var(--r-plate);background:linear-gradient(180deg,#2a2e31,#17191b);border:1px solid var(--edge2);box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px #000,inset 0 1px 0 rgba(255,255,255,.08)}
+.mon .bar{display:flex;align-items:center;gap:10px;font:600 var(--t-label) var(--mono);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;padding:0 4px 10px}
+.mon .bar .tally{width:9px;height:9px;border-radius:var(--r-light);background:#3a3f43;box-shadow:inset 0 1px 1px rgba(0,0,0,.6)}
 .mon .bar .src{margin-left:auto;color:var(--fg2)}
-.screen{position:relative;border-radius:4px;overflow:hidden;background:#000;border:1px solid #000;line-height:0}
+.screen{position:relative;border-radius:var(--r-ctl);overflow:hidden;background:#000;border:1px solid #000;line-height:0}
 .screen img{display:block;width:100%;height:auto}
-.mon .lower{display:flex;align-items:stretch;margin-top:10px;font:700 13px var(--cond);text-transform:uppercase;letter-spacing:.08em}
+.mon .lower{display:flex;align-items:stretch;margin-top:10px;font:700 var(--t-13) var(--cond);text-transform:uppercase;letter-spacing:.08em}
 .mon .lower b{background:var(--rust);color:#120700;padding:6px 10px}
 .mon .lower span{background:#0d0f10;padding:6px 12px;color:var(--fg);flex:1}
 .mon figcaption{margin-top:8px}
-.dl .sha{display:block;margin:4px 2px 8px;font:500 12px/1.4 var(--mono);color:var(--dim);word-break:break-all;user-select:all}
-.dl .verify{margin-top:10px;font-size:13px;color:var(--dim)}
-.dl .verify code{font-size:12px}
-.chan{margin-top:34px}
-.chan h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;font:600 18px var(--mono)}
-.chan h3 b{font:800 26px var(--stencil);text-transform:uppercase;color:var(--rust)}
-.chan h3 span{font-size:13px;color:var(--dim)}
-.chan .dl{margin-top:14px}
-.limits{margin-top:30px;padding:24px 26px}
-.limits h3{font:800 24px var(--stencil);text-transform:uppercase;margin-bottom:10px}
-.limits ul{list-style:none;display:grid;gap:10px}
-.limits li{display:grid;grid-template-columns:130px minmax(0,1fr) auto;gap:14px;align-items:baseline;font-size:15px}
-.limits li b{font:700 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--haz)}
-.limits .receipt{white-space:nowrap}
-@media(max-width:700px){.limits li{grid-template-columns:minmax(0,1fr)}}
+
+/* downloads */
+.chan{margin-top:var(--s-4)}
+.chan h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;font:600 var(--t-17) var(--mono)}
+.chan h3 b{font:800 var(--t-30) var(--stencil);text-transform:uppercase;color:var(--rust)}
+.chan h3 span{font-size:var(--t-13);color:var(--dim)}
+.dl{margin-top:var(--s-2)}
+.dl .card{padding:var(--s-3)}
+.dl .os{font:800 var(--t-30) var(--stencil);text-transform:uppercase}
+.dl ul{list-style:none;display:grid;gap:6px;margin-top:6px}
+.dl ul a{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--edge);border-radius:var(--r-ctl);font:500 var(--t-13) var(--mono);color:var(--fg2)}
+.dl ul a:hover{border-color:var(--rust);color:var(--fg)}
+.dl ul a span{color:var(--dim)}
+.dl .sha{display:block;margin:4px 2px 8px;font:500 var(--t-12)/1.4 var(--mono);color:var(--dim);word-break:break-all;user-select:all;background:none;border:0;padding:0}
+.dl .verify{margin-top:10px;font-size:var(--t-13);color:var(--dim)}
 .dl .yours{box-shadow:0 0 0 1px var(--rust)}
+.limits{margin-top:var(--s-4);padding:var(--s-3)}
+.limits h3{margin-bottom:10px}
+.limits ul{list-style:none;display:grid;gap:var(--s-2)}
+.limits li{display:grid;grid-template-columns:130px minmax(0,1fr);gap:2px var(--s-2);align-items:baseline;font-size:var(--t-ui)}
+.limits li b{font:700 var(--t-label) var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--haz)}
+.limits li .receipt{grid-column:2;margin:0}
+@media(max-width:700px){.limits li{grid-template-columns:minmax(0,1fr)}.limits li .receipt{grid-column:1}}
 
 /* crossover */
-.xo{padding:32px}
-.xo .head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:22px}
-.xo .big{font:900 clamp(56px,9vw,104px)/.85 var(--stencil);color:var(--rust)}
-.xo .big small{font-size:.38em;color:var(--fg2);margin-left:6px}
-.bars{display:flex;height:44px;border-radius:4px;overflow:hidden;border:1px solid #000;box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
-.bars div{display:flex;align-items:center;padding:0 12px;font:700 12px var(--mono);color:#0b0b0b;white-space:nowrap;overflow:hidden;min-width:0}
+.xo{padding:var(--s-4)}
+.xo .head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:var(--s-2);margin-bottom:var(--s-3)}
+.xo h2{margin:0}
+.xo .big{font:900 var(--t-52)/.85 var(--stencil);color:var(--rust)}
+.xo .big small{font-size:var(--t-22);color:var(--fg2);margin-left:6px}
+@media(min-width:1100px){.xo .big{font-size:var(--t-96)}.xo .big small{font-size:var(--t-30)}}
+.xo .sub{margin-bottom:10px;font-size:var(--t-ui)}
+.bars{display:flex;height:44px;border-radius:var(--r-ctl);overflow:hidden;border:1px solid #000;box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
+.bars div{display:flex;align-items:center;padding:0 12px;font:700 var(--t-label) var(--mono);color:#0b0b0b;white-space:nowrap;overflow:hidden;min-width:0}
 .bars .r{background:linear-gradient(180deg,var(--rust-hi),var(--rust-lo))}
 .bars .c{background:linear-gradient(180deg,#b6c0ca,#6f7a85)}
 .bars .x{background:linear-gradient(180deg,#7d8b99,#4b5662);color:#e8e8e8}
 .bars .o{background:repeating-linear-gradient(-45deg,#2a2e31 0 6px,#212427 6px 12px);color:var(--dim)}
-.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:14px;font:500 13px var(--mono);color:var(--dim)}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:14px;font:500 var(--t-13) var(--mono);color:var(--dim)}
 .legend b{color:var(--fg)}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--edge);border:1px solid var(--edge);border-radius:6px;overflow:hidden;margin-top:24px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--edge);border:1px solid var(--edge);border-radius:var(--r-plate);overflow:hidden;margin-top:var(--s-3)}
 .stats div{background:var(--plate);padding:18px 20px}
-.stats b{display:block;font:800 34px/1 var(--stencil);color:var(--fg)}
-.stats span{font:600 12px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.stats b{display:block;font:800 var(--t-num)/1 var(--stencil);color:var(--fg)}
+.stats span{font:600 var(--t-label) var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
 @media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
 
 /* compat */
-.compat{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:16px;margin-top:28px}
-.compat .card h3{display:flex;align-items:center;gap:12px}
-
-/* downloads */
-.dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:28px}
-.dl .card{padding:26px}
-.dl .os{font:800 30px var(--stencil);text-transform:uppercase}
-.dl ul{list-style:none;display:grid;gap:6px;margin-top:6px}
-.dl ul a{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--edge);border-radius:3px;font:500 13px var(--mono);color:var(--fg2)}
-.dl ul a:hover{border-color:var(--rust);color:var(--fg)}
-.dl ul a span{color:var(--dim)}
-@media(max-width:900px){.dl{grid-template-columns:minmax(0,1fr)}}
+.grid .card h3{display:flex;align-items:center;gap:12px}
 
 /* features */
-.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px;margin-top:28px}
 .feat .card{padding:18px 20px;gap:6px}
-.feat .card h3{font-size:18px}
-.feat .card p{font-size:15px}
-.feat .card .m{font:500 12px var(--mono);color:var(--dim);display:flex;gap:8px;flex-wrap:wrap}
+.feat .card h3{font-size:var(--t-19)}
+.feat .card .m{font:500 var(--t-label) var(--mono);color:var(--dim);display:flex;gap:8px;flex-wrap:wrap}
 
 /* tiers */
-.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:28px;counter-reset:t}
-.tiers div{padding:22px;border:1px solid var(--edge);margin-left:-1px;background:var(--plate);position:relative}
-.tiers div::before{counter-increment:t;content:"TIER " counter(t);font:700 12px var(--mono);letter-spacing:.2em;color:var(--rust)}
-.tiers h3{margin:8px 0 6px;font-size:19px}
-.tiers p{color:var(--dim);font-size:15px}
+.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:var(--s-3);counter-reset:t}
+.tiers div{padding:var(--s-3);border:1px solid var(--edge);margin-left:-1px;background:var(--plate);position:relative}
+.tiers div::before{counter-increment:t;content:"TIER " counter(t);font:700 var(--t-label) var(--mono);letter-spacing:.2em;color:var(--rust)}
+.tiers h3{margin:8px 0 6px;font-size:var(--t-19)}
+.tiers p{color:var(--dim);font-size:var(--t-ui)}
 @media(max-width:900px){.tiers{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.tiers{grid-template-columns:1fr}.mon .bar .src{display:none}.bars div{padding:0 6px;font-size:12px}}
+@media(max-width:560px){.tiers{grid-template-columns:1fr}.mon .bar .src{display:none}.bars div{padding:0 6px}}
 
 /* agent */
-.agent{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:40px;align-items:center}
+.agent{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:var(--s-5);align-items:center}
 @media(max-width:900px){.agent{grid-template-columns:minmax(0,1fr)}}
-.term{border-radius:8px;overflow:hidden;border:1px solid var(--edge2);box-shadow:0 30px 60px -30px #000}
+.term{border-radius:var(--r-plate);overflow:hidden;border:1px solid var(--edge2);box-shadow:0 30px 60px -30px #000}
 .term .tb{display:flex;gap:6px;padding:10px 12px;background:#1d2023;border-bottom:1px solid #000}
-.term .tb i{width:11px;height:11px;border-radius:50%;background:#3a3f43}
+.term .tb i{width:11px;height:11px;border-radius:var(--r-light);background:#3a3f43}
 .term .tb i:first-child{background:#ff5f56}.term .tb i:nth-child(2){background:#ffbd2e}.term .tb i:nth-child(3){background:#27c93f}
 .term pre{border:0;border-radius:0;margin:0}
 </style>
@@ -109,13 +105,13 @@
 <body>
 {{nav:home}}
 <main id="main">
-<section class="hero" style="padding-top:72px">
+<section class="hero start">
   <div class="wrap">
     <div>
       <span class="eyebrow">obs-studio-rust · stable {{cta_version}}</span>
       <h1><span class="row">The OBS</span><span class="row out">you know.</span><span class="row"><em>Rebuilt</em> in Rust.</span></h1>
       <p class="lede">An independent rewrite of OBS Studio, one module at a time. The libobs C ABI, the obs-websocket v5 protocol and your plugins, scenes and profiles keep working, and {{n_fixed}} upstream bugs are already fixed.</p>
-      <div class="cta">
+      <div class="actions">
         <a class="btn primary" href="#download">Download {{cta_version}} ↓</a>
         <a class="btn" href="https://github.com/obs-rust/obs-studio">★ {{stars}} on GitHub</a>
         <a class="btn ghost" href="/websocket/">WebSocket API</a>
@@ -133,17 +129,17 @@
   </div>
 </section>
 
-<section id="crossover" style="padding-top:56px">
+<section id="crossover">
   <div class="wrap">
     <div class="plate xo">
       <div class="head">
         <div>
           <span class="eyebrow">Conversion progress</span>
-          <h2 style="margin:0">Porting libobs, <em>module by module</em></h2>
+          <h2>Porting libobs, <em>module by module</em></h2>
         </div>
         <div class="big" title="libobs lines ported to Rust, from conversion.json">{{libobs_pct}}<small>% of libobs ported</small></div>
       </div>
-      <p class="muted" style="margin-bottom:10px;font-size:15px">Whole repository, bytes of source by language:</p>
+      <p class="muted sub">Whole repository, bytes of source by language:</p>
       <div class="bars" role="img" aria-label="Rust {{rust_pct}} percent, C {{c_pct}} percent, C++ {{cpp_pct}} percent, other {{other_pct}} percent">
         <div class="r" style="flex:{{rust_pct}}">Rust {{rust_pct}}%</div>
         <div class="c" style="flex:{{c_pct}}">C {{c_pct}}%</div>
@@ -167,7 +163,7 @@
     <span class="eyebrow">Drop-in, by contract</span>
     <h2>Built to stay <em>compatible</em></h2>
     <p class="lede">The public surface is a compatibility contract. Rust replaces C behind the same symbols, and four tiers of tests compare the Rust build against the original C.</p>
-    <div class="compat">
+    <div class="grid g4">
       <div class="plate card"><h3><span class="ico">C</span>libobs C ABI</h3><p>The exported symbols and headers stay the same. Plugins compiled for OBS load without a rebuild.</p></div>
       <div class="plate card"><h3><span class="ico">v5</span>obs-websocket</h3><p>The upstream C++ plugin ships unmodified as the compatibility check. Stream Deck, Touch Portal, bots and overlays keep working.</p></div>
       <div class="plate card"><h3><span class="ico">py</span>Scripting</h3><p>The Lua and Python scripting APIs and the frontend API work as before. Your scripts and docks still run.</p></div>
@@ -186,7 +182,7 @@
       <h3>What to expect</h3>
       <ul>{{limits}}</ul>
     </div>
-    <p class="muted" style="margin-top:14px;font-size:15px">Every release with its <code>SHA256SUMS</code>: <a href="https://github.com/obs-rust/obs-studio/releases">github.com/obs-rust/obs-studio/releases</a>. Full install notes: <a href="https://github.com/obs-rust/obs-studio#install">README</a> · <a href="/ai/docs/site-download.md">as markdown</a>.</p>
+    <p class="muted aside">Every release with its <code>SHA256SUMS</code>: <a href="https://github.com/obs-rust/obs-studio/releases">github.com/obs-rust/obs-studio/releases</a>. Full install notes: <a href="https://github.com/obs-rust/obs-studio#install">README</a> · <a href="/ai/docs/site-download.md">as markdown</a>.</p>
   </div>
 </section>
 
@@ -195,7 +191,7 @@
     <span class="eyebrow">Features ledger</span>
     <h2>What's <em>different</em></h2>
     <p class="lede">Every user-visible change from upstream gets a line in <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/features.md">docs/features.md</a>. Newest first:</p>
-    <div class="feat">{{feature_cards}}</div>
+    <div class="grid g3 feat">{{feature_cards}}</div>
   </div>
 </section>
 
@@ -210,7 +206,7 @@
       <div><h3>Differential</h3><p>The Rust and C versions run side by side on the same inputs, and the outputs are compared.</p></div>
       <div><h3>Black-box protocol</h3><p>Real obs-websocket clients run against the whole app.</p></div>
     </div>
-    <p class="muted" style="margin-top:16px;font-size:15px">Read the <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/testing-policy.md">testing policy</a> and <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/coordination.md">coordination guide</a>.</p>
+    <p class="muted aside">Read the <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/testing-policy.md">testing policy</a> and <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/coordination.md">coordination guide</a>.</p>
   </div>
 </section>
 
@@ -221,7 +217,7 @@
       <h2>Point an AI at an <em>issue</em></h2>
       <p class="lede">We welcome AI-generated issues and pull requests, and judge them by the work. Paste this into Claude Code and it picks up a ready issue, writes the failing test, ports the code and opens a PR.</p>
       <p class="muted">Using another agent? The <a href="https://github.com/obs-rust/obs-studio#readme">README</a> has a plain-text prompt. Agents can read the whole project at once from <a href="/llms-full.txt">/llms-full.txt</a>.</p>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
+      <div class="actions">
         <a class="btn" href="https://github.com/obs-rust/obs-studio/issues?q=is%3Aopen+label%3Aready">Ready issues →</a>
         <a class="btn ghost" href="https://discord.gg/6MWWX4x9pf">Discord</a>
         <a class="btn ghost" href="/ai/">AI corpus</a>
@@ -238,7 +234,7 @@
   <div class="wrap">
     <span class="eyebrow">For builders</span>
     <h2>Drive OBS from <em>anything</em></h2>
-    <div class="grid" style="margin-top:28px">
+    <div class="grid g3">
       <a class="plate card" href="/websocket/"><span class="ico">WS</span><h3>WebSocket API</h3><p>All {{n_requests}} requests, {{n_events}} events and every enum, searchable. You can call your own OBS from the page.</p><span class="go">Open reference →</span></a>
       <a class="plate card" href="/mcp/"><span class="ico">MCP</span><h3>MCP server</h3><p>Give an AI agent OBS: {{n_tools}} typed tools for scenes, sources, recording, streaming, screenshots and waits.</p><span class="go">Plug in an agent →</span></a>
       <a class="plate card" href="/examples/"><span class="ico">{ }</span><h3>Examples</h3><p>Rust, Python, JavaScript and raw-socket clients, plus plugin and script starters.</p><span class="go">Copy &amp; run →</span></a>

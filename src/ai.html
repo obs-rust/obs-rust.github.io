@@ -3,39 +3,35 @@
 <head>
 {{head:AI corpus — llms.txt for OBS Studio Rust|The whole OBS Studio Rust knowledge base as plain text for AI agents: llms.txt, llms-full.txt, chunked JSON for retrieval, and a full-text search over every chunk.}}
 <style>
-.feeds{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px;margin-top:28px}
-.feeds .card code{font-size:13px}
-.feeds .card b{font:800 30px var(--stencil);color:var(--rust)}
-.srch{margin-top:56px}
+.feeds .card code{font-size:var(--t-13)}
+.feeds .card b{font:800 var(--t-30) var(--stencil);color:var(--rust)}
+.feeds+pre{margin-top:20px}
 .tblwrap{overflow-x:auto;margin-top:18px}
-.router{width:100%;border-collapse:collapse;font-size:15px}
-.router th{text-align:left;font:700 12px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);padding:8px 10px;border-bottom:1px solid var(--edge)}
-.router td{padding:9px 10px;border-bottom:1px solid var(--edge);vertical-align:top}
-.router td code{font-size:13px;word-break:break-all}
-.router .n{text-align:right;white-space:nowrap;font:500 13px var(--mono);color:var(--dim)}
+.router td code{word-break:break-all}
+.router .n{text-align:right;white-space:nowrap;font:500 var(--t-13) var(--mono);color:var(--dim)}
 .srch .bar{display:flex;gap:10px;flex-wrap:wrap;position:sticky;top:60px;z-index:5;padding:12px 0;background:linear-gradient(180deg,var(--bg0) 70%,transparent)}
-.srch input{flex:1;min-width:240px;font-size:17px;padding:14px 16px}
+.srch input{flex:1;min-width:240px;font-size:var(--t-17);padding:14px 16px}
 .srch select{width:auto}
 .tries{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
-.tries a{font:500 13px var(--mono);padding:6px 10px;border:1px solid var(--edge2);border-radius:4px;color:var(--fg2);transition:border-color .15s,color .15s}
+.tries a{font:500 var(--t-13) var(--mono);padding:6px 10px;border:1px solid var(--edge2);border-radius:var(--r-ctl);color:var(--fg2);transition:border-color .15s,color .15s}
 .tries a:hover{border-color:var(--rust);color:var(--fg)}
+#meta{font:500 var(--t-13) var(--mono)}
 #hits{display:grid;gap:10px;margin-top:12px}
-.hit{padding:12px 14px;border:1px solid var(--edge);border-radius:6px;background:var(--plate);max-height:200px;overflow:hidden;transition:border-color .15s}
+.hit{padding:12px 14px;border:1px solid var(--edge);border-radius:var(--r-plate);background:var(--plate);max-height:200px;overflow:hidden;transition:border-color .15s}
 .hit:hover{border-color:var(--edge2)}
 .hit .t{display:flex;gap:10px;align-items:baseline;min-width:0}
-.hit .t a{font:700 16px var(--mono);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.hit .t a{font:700 var(--t-15) var(--mono);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .hit .t a:hover{color:var(--rust-hi)}
-.hit .k{flex:none;font:700 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--cu-hi)}
-.hit .h{color:var(--dim);font:500 13px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.hit .sn{margin:6px 0 8px;font-size:15px;line-height:1.45;color:var(--fg2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hit .k{flex:none;font:700 var(--t-label) var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--cu-hi)}
+.hit .h{color:var(--dim);font:500 var(--t-13) var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.hit .sn{margin:6px 0 8px;font-size:var(--t-ui);line-height:1.45;color:var(--fg2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .hit .act{display:flex;gap:8px;align-items:center}
-.hit .act a,.hit .act button{font:600 12px var(--mono);min-height:26px;padding:4px 10px;border:1px solid var(--edge2);border-radius:4px;background:transparent;color:var(--fg2);cursor:pointer;transition:border-color .15s,color .15s}
+.hit .act a,.hit .act button{font:600 var(--t-label) var(--mono);min-height:26px;padding:4px 10px;border:1px solid var(--edge2);border-radius:var(--r-ctl);background:transparent;color:var(--fg2);cursor:pointer;transition:border-color .15s,color .15s}
 .hit .act a:hover,.hit .act button:hover{border-color:var(--rust);color:var(--fg)}
-.hit .act .id{margin-left:auto;font:500 12px var(--mono);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.hit mark{background:rgba(232,99,26,.35);color:#fff;border-radius:2px}
-kbd{font:600 12px var(--mono);padding:1px 6px;border:1px solid var(--edge2);border-radius:4px}
-.docs{columns:3 260px;gap:28px;margin-top:20px;font:500 14px var(--mono)}
-.docs h3{font:700 12px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--rust);margin:14px 0 6px;break-after:avoid}
+.hit .act .id{margin-left:auto;font:500 var(--t-label) var(--mono);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.hit mark{background:rgba(232,99,26,.35);color:#fff;border-radius:var(--r-ctl)}
+.docs{columns:3 260px;gap:28px;margin-top:20px;font:500 var(--t-13) var(--mono)}
+.docs h3{font:700 var(--t-label) var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--rust);margin:14px 0 6px;break-after:avoid}
 .docs a{display:block;color:var(--fg2);padding:2px 0;break-inside:avoid}
 .docs a:hover{color:var(--fg)}
 </style>
@@ -43,32 +39,32 @@ kbd{font:600 12px var(--mono);padding:1px 6px;border:1px solid var(--edge2);bord
 <body>
 {{nav:ai}}
 <main id="main" class="wrap">
-  <div class="phead">
+  <div class="phead start">
     <span class="eyebrow">For agents · for retrieval · for humans with questions</span>
-    <h1>AI <em style="font-style:normal;color:var(--rust)">corpus</em></h1>
+    <h1>AI <em>corpus</em></h1>
     <p class="lede">The whole project as text, rebuilt every day from <a href="https://github.com/obs-rust/obs-studio/commit/{{obs_sha}}">obs-studio@{{obs_sha_short}}</a>: the README, port process, lessons learned, the features ledger, the libobs C API reference and the obs-websocket protocol. Point your agent at it, or search it below.</p>
-    <div class="feeds">
+    <div class="grid g3 feeds">
       <a class="plate card" href="/llms.txt"><b>llms.txt</b><p>The index, in the llmstxt.org format. Start here.</p><code>{{corpus_docs}} documents</code></a>
       <a class="plate card" href="/llms-ctx.txt"><b>llms-ctx.txt</b><p>The core bundle: README, agent rules, port process, MCP and WebSocket references. Sized to fit one context window.</p><code>{{ctx_kb}} KB</code></a>
       <a class="plate card" href="/llms-full.txt"><b>llms-full.txt</b><p>Everything in one file, to paste into a context window.</p><code>{{corpus_mb}} MB</code></a>
       <a class="plate card" href="/ai/corpus.json"><b>corpus.json</b><p>Typed chunks (prose, WebSocket requests, MCP tools, ledger entries), each opening with its heading path, with source links. Ready to embed.</p><code>{{corpus_chunks}} chunks</code></a>
       <a class="plate card" href="/websocket/protocol.json"><b>protocol.json</b><p>The machine-readable obs-websocket v5 spec, pinned.</p><code>{{n_requests}} requests · {{n_events}} events</code></a>
     </div>
-    <pre style="margin-top:20px"><span class="c"># give an agent the project in one line</span>
+    <pre><span class="c"># give an agent the project in one line</span>
 curl -s https://obs-rust.com/llms-ctx.txt | claude -p <span class="s">"How does obs-studio-rust keep the libobs ABI compatible while porting?"</span>
 
 <span class="c"># or pull chunks for retrieval</span>
 curl -s https://obs-rust.com/ai/corpus.json | jq <span class="s">'.chunks[] | select(.kind=="ws-request") | .breadcrumb'</span></pre>
   </div>
 
-  <section id="router" style="padding-top:48px">
+  <section id="router">
     <span class="eyebrow">Router · one task, one file</span>
     <h2>What to fetch <em>first</em></h2>
     <p class="lede">The same table heads <a href="/llms.txt">llms.txt</a>. Every document under /ai/docs/ is listed with its SHA-256 in <a href="/ai/manifest.json">manifest.json</a>.</p>
-    <div class="tblwrap"><table class="router"><thead><tr><th>Task</th><th>Fetch</th><th class="n">Size</th></tr></thead><tbody>{{ai_router}}</tbody></table></div>
+    <div class="tblwrap"><table class="list router"><thead><tr><th>Task</th><th>Fetch</th><th class="n">Size</th></tr></thead><tbody>{{ai_router}}</tbody></table></div>
   </section>
 
-  <section class="srch" style="padding-top:48px">
+  <section class="srch">
     <span class="eyebrow">Full-text search</span>
     <div class="bar">
       <input type="search" id="q" placeholder="Search the corpus… e.g. SetInputSettings, gs_texture_create, testing tiers" aria-label="Search the corpus">
@@ -82,11 +78,11 @@ curl -s https://obs-rust.com/ai/corpus.json | jq <span class="s">'.chunks[] | se
       <a href="#q=gs_texture_create">gs_texture_create</a>
       <a href="#q=testing%20tiers">testing tiers</a>
     </div>
-    <div id="meta" class="muted" aria-live="polite" style="font:500 13px var(--mono)">{{corpus_chunks}} chunks · {{corpus_docs}} documents. Press <kbd>/</kbd> to search; the index loads when you start.</div>
+    <div id="meta" class="muted" aria-live="polite">{{corpus_chunks}} chunks · {{corpus_docs}} documents. Press <kbd>/</kbd> to search; the index loads when you start.</div>
     <div id="hits"></div>
   </section>
 
-  <section style="padding-top:64px">
+  <section>
     <span class="eyebrow">Every document</span>
     <div class="docs" id="docs">{{ai_doc_list}}</div>
   </section>

@@ -4,24 +4,23 @@
 {{head:Signal lost — OBS Studio Rust|This page doesn't exist on obs-rust.com.}}
 <meta name="robots" content="noindex">
 <style>
-.lost{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center;padding:80px 0 20px}
+.lost{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s-6);align-items:center;padding-bottom:var(--s-3)}
 .lost img{width:100%;max-width:340px;filter:grayscale(.6) drop-shadow(0 20px 40px rgba(232,99,26,.3));justify-self:center}
-.lost h1{font:900 clamp(56px,10vw,128px)/.85 var(--stencil);text-transform:uppercase}
-.lost h1 em{font-style:normal;color:var(--rust)}
-.lost .code{font:700 13px var(--mono);letter-spacing:.2em;color:var(--haz);margin-bottom:12px}
-.lost .go{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.lost h1{font-size:var(--t-52);line-height:.85}
+@media(min-width:1100px){.lost h1{font-size:var(--t-96)}}
+.lost .code{font:700 var(--t-13) var(--mono);letter-spacing:.2em;color:var(--haz);margin-bottom:12px}
 @media(max-width:760px){.lost{grid-template-columns:minmax(0,1fr)}.lost img{max-width:200px}}
 </style>
 </head>
 <body>
 {{nav:none}}
 <main id="main" class="wrap">
-  <div class="lost">
+  <div class="lost start">
     <div>
       <div class="code">404 · SOURCE NOT FOUND</div>
       <h1>Signal <em>lost</em></h1>
-      <p class="lede" style="margin-top:18px">This scene has no source. The page may have moved when the site was rebuilt.</p>
-      <div class="go">
+      <p class="lede">This scene has no source. The page may have moved when the site was rebuilt.</p>
+      <div class="actions">
         <a class="btn primary" href="/">Home</a>
         <a class="btn" href="/websocket/">WebSocket API</a>
         <a class="btn" href="/examples/">Examples</a>

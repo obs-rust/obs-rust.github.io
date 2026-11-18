@@ -3,70 +3,62 @@
 <head>
 {{head:obs-websocket v5 API reference — OBS Studio Rust|Every obs-websocket v5 request, event and enum, searchable, with a live console that talks to your own OBS from the browser.}}
 <style>
-.ws{display:grid;grid-template-columns:270px minmax(0,1fr);gap:36px;margin-top:28px}
-.side{position:sticky;top:76px;max-height:calc(100vh - 96px);overflow:auto;padding-right:8px;font:500 13px var(--mono);scrollbar-width:thin}
+.ws{display:grid;grid-template-columns:270px minmax(0,1fr);gap:var(--s-5);margin-top:var(--s-4)}
+.side{position:sticky;top:76px;max-height:calc(100vh - 96px);overflow:auto;padding-right:8px;font:500 var(--t-13) var(--mono);scrollbar-width:thin}
 .side details{margin-bottom:6px}
-.side summary{cursor:pointer;padding:6px 8px;color:var(--fg);text-transform:uppercase;letter-spacing:.1em;font-weight:700;font-size:12px;display:flex;justify-content:space-between;border-radius:3px}
+.side summary{cursor:pointer;padding:6px 8px;color:var(--fg);text-transform:uppercase;letter-spacing:.1em;font-weight:700;font-size:var(--t-12);display:flex;justify-content:space-between;border-radius:var(--r-ctl)}
 .side summary:hover{background:rgba(255,255,255,.04)}
 .side summary span{color:var(--dim)}
 .side a{display:block;padding:3px 8px 3px 16px;color:var(--fg2);border-left:1px solid var(--edge);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .side a.ev{color:#f0a774}
 .side a:hover{color:var(--fg);border-left-color:var(--rust)}
 .side a.hide{display:none}
-.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;position:sticky;top:60px;z-index:5;padding:12px 0;background:linear-gradient(180deg,var(--bg0) 70%,transparent)}
-.tools input{flex:1;min-width:220px}
-.chip{padding:9px 14px;border:1px solid var(--edge2);border-radius:var(--r);background:transparent;color:var(--fg2);font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.filter input{flex:1;min-width:220px}
+.chip{padding:9px 14px;border:1px solid var(--edge2);border-radius:var(--r-ctl);background:transparent;color:var(--fg2);font:600 var(--t-label) var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 .chip[aria-pressed=true]{background:var(--rust);color:#120700;border-color:var(--rust)}
-.count{font:500 12px var(--mono);color:var(--dim)}
-.it{padding:22px 0;border-bottom:1px solid var(--edge);scroll-margin-top:130px}
+.it{padding:var(--s-3) 0;border-bottom:1px solid var(--edge);scroll-margin-top:130px}
 .it.hide{display:none}
 .it header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
-.it .nm{font:700 20px var(--mono);color:var(--fg);margin-right:6px}
+.it .nm{font:700 var(--t-19) var(--mono);color:var(--fg);margin-right:6px;overflow-wrap:anywhere;min-width:0}
 .it .nm:hover{color:var(--rust-hi)}
 .it:target{background:linear-gradient(90deg,rgba(232,99,26,.08),transparent 60%);box-shadow:inset 3px 0 0 var(--rust);padding-left:14px}
-.it p{color:var(--fg2);max-width:80ch}
-.it .nm{overflow-wrap:anywhere;min-width:0}
-.it h3{font:700 12px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:14px 0 6px}
-.cx{font-size:12px;color:var(--rust);letter-spacing:2px}
-.try{margin-left:auto;padding:5px 10px;min-height:26px;border:1px solid var(--cu);color:var(--cu-hi);background:transparent;border-radius:3px;font:700 12px var(--mono);cursor:pointer}
+.it p{color:var(--fg2)}
+.it h3{font:700 var(--t-label) var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:14px 0 6px}
+.cx{font-size:var(--t-12);color:var(--rust);letter-spacing:2px}
+.try{margin-left:auto;padding:5px 10px;min-height:26px;border:1px solid var(--cu);color:var(--cu-hi);background:transparent;border-radius:var(--r-ctl);font:700 var(--t-label) var(--mono);cursor:pointer}
 .try:hover{background:var(--cu);color:#000}
-.ft{min-width:100%;border-collapse:collapse;font-size:14.5px}
-.ft td{padding:8px 10px;border-top:1px solid #26292c;vertical-align:top}
-.ft td:first-child{white-space:nowrap;width:1%}
-.ft td:first-child .tag{margin-left:6px;font-size:12px}
-.ft .ty{font:500 12.5px var(--mono);color:var(--cu-hi);white-space:nowrap;width:1%}
-.restr{font:500 12px var(--mono);color:var(--dim);margin-top:3px}
+.restr{font:500 var(--t-label) var(--mono);color:var(--dim);margin-top:3px}
 details>summary{cursor:pointer}
-.it details{margin-top:10px}.it details summary{font:600 12px var(--mono);color:var(--dim)}
+.it details{margin-top:10px}.it details summary{font:600 var(--t-label) var(--mono);color:var(--dim)}
 .it details pre{margin-top:8px}
 @media(max-width:900px){.ws{grid-template-columns:minmax(0,1fr)}.side{display:none}}
 
 /* console */
-.con{margin-top:36px;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.con .con-h{display:flex;align-items:center;gap:10px;font:700 18px var(--mono);text-transform:none;letter-spacing:0;margin:0}
-.con .st{font:600 12px var(--mono);padding:3px 8px;border-radius:3px;border:1px solid var(--edge2);color:var(--dim)}
+.con{margin-top:var(--s-5);padding:var(--s-3);display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.con .con-h{display:flex;align-items:center;gap:10px;font:700 var(--t-17) var(--mono);text-transform:none;letter-spacing:0;margin:0}
+.con .st{font:600 var(--t-label) var(--mono);padding:3px 8px;border-radius:var(--r-ctl);border:1px solid var(--edge2);color:var(--dim)}
 .con .st.ok{color:#000;background:var(--cu-hi);border-color:var(--cu-hi)}
 .con .st.err{color:#fff;background:#a32020;border-color:#a32020}
 .con .row{display:flex;gap:8px;margin:12px 0}
-.con textarea{min-height:200px;font-size:13px;resize:vertical}
-.log{background:#0a0b0c;border:1px solid var(--edge);border-radius:6px;padding:12px;height:330px;overflow:auto;font:500 12.5px/1.5 var(--mono);white-space:pre-wrap;word-break:break-word}
+.con .intro{font-size:var(--t-ui);margin-top:6px}
+.con textarea{min-height:200px;font-size:var(--t-13);resize:vertical}
+.log{background:#0a0b0c;border:1px solid var(--edge);border-radius:var(--r-plate);padding:12px;height:330px;overflow:auto;font:500 var(--t-12)/1.5 var(--mono);white-space:pre-wrap;word-break:break-word}
 .log .o{color:#ffb98c}.log .i{color:#9fe0c8}.log .e{color:#ff8080}.log .m{color:var(--dim)}
-.con label{font:600 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.con label{font:600 var(--t-label) var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 @media(max-width:900px){.con{grid-template-columns:minmax(0,1fr)}}
-.proto{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px;margin-top:20px}
 .proto .card{padding:16px 18px;gap:4px}
-.proto b{font:700 26px var(--stencil);color:var(--rust)}
+.proto b{font:700 var(--t-30) var(--stencil);color:var(--rust)}
 </style>
 </head>
 <body>
 {{nav:websocket}}
 <main id="main" class="wrap">
-  <div class="phead">
+  <div class="phead start">
     <span class="eyebrow">obs-websocket · protocol v5 · rpcVersion 1</span>
-    <h1>WebSocket <em style="font-style:normal;color:var(--rust)">API</em></h1>
+    <h1>WebSocket <em>API</em></h1>
     <p class="lede">obs-studio-rust ships the upstream obs-websocket plugin unmodified as its compatibility check, so clients written for obs-websocket v5 (OBS 28 and later) are expected to work against it unchanged. This reference is generated from <a href="https://github.com/obs-rust/obs-websocket/blob/{{ws_sha}}/docs/generated/protocol.json">protocol.json</a> at the exact commit obs-studio ships.</p>
     <div class="meta"><span class="tag cu">{{n_requests}} requests</span><span class="tag rust">{{n_events}} events</span><span class="tag haz">{{n_enums}} enums</span><span class="tag">obs-websocket@{{ws_sha_short}}</span><a class="tag" href="/websocket/protocol.json">protocol.json ↓</a><a class="tag" href="/ai/docs/obs-websocket-docs-generated-protocol.md">protocol.md ↓</a></div>
-    <div class="proto">
+    <div class="grid g4 proto">
       <div class="plate card"><b>op 0 → 1</b><span class="muted">Hello → Identify (auth), then Identified (op 2)</span></div>
       <div class="plate card"><b>op 6 → 7</b><span class="muted">Request → RequestResponse, matched by requestId</span></div>
       <div class="plate card"><b>op 5</b><span class="muted">Event, filtered by eventSubscriptions bitmask</span></div>
@@ -74,10 +66,10 @@ details>summary{cursor:pointer}
     </div>
   </div>
 
-  <section class="plate con" id="console" style="padding-top:24px">
+  <section class="plate con" id="console">
     <div>
       <h2 class="con-h">Live console <span class="st" id="st">disconnected</span></h2>
-      <p class="muted" style="font-size:15px;margin-top:6px">Connect straight to your own OBS: enable it under <b>Tools → WebSocket Server Settings</b>. Everything stays between this tab and your machine. The password only feeds the SHA-256 challenge and is never stored.</p>
+      <p class="muted intro">Connect straight to your own OBS: enable it under <b>Tools → WebSocket Server Settings</b>. Everything stays between this tab and your machine. The password only feeds the SHA-256 challenge and is never stored.</p>
       <div class="row"><input id="url" type="text" value="ws://127.0.0.1:4455" aria-label="WebSocket URL"><input id="pw" type="password" placeholder="password (optional)" aria-label="Password"></div>
       <div class="row"><button class="btn primary" id="connect">Connect</button><button class="btn ghost" id="send" disabled>Send ▸</button></div>
       <label for="msg">Request (op 6)</label>
@@ -89,7 +81,7 @@ details>summary{cursor:pointer}
   <div class="ws">
     <aside class="side" aria-label="API index">{{ws_nav}}</aside>
     <div>
-      <div class="tools">
+      <div class="filter">
         <input type="search" id="q" placeholder="Search requests, events, enums…  ( / )" aria-label="Search the API">
         <button class="chip" aria-pressed="true" data-k="all">All</button>
         <button class="chip" aria-pressed="false" data-k="request">Requests</button>

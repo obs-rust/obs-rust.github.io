@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.12"
-# dependencies = []
+# dependencies = ["jsonschema>=4.22"]
 # ///
 """Build obs-rust.com into _site/.
 
@@ -28,6 +28,9 @@ import subprocess
 import sys
 import urllib.request
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import mcp as mcpmod  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SITE = "https://obs-rust.com"
@@ -396,7 +399,7 @@ def head(title: str, desc: str, path: str = "/") -> str:
 
 
 NAV_ITEMS = [("home", "/", "Home"), ("download", "/#download", "Download"), ("websocket", "/websocket/", "WebSocket API"),
-             ("examples", "/examples/", "Examples"), ("ai", "/ai/", "AI corpus")]
+             ("mcp", "/mcp/", "MCP"), ("examples", "/examples/", "Examples"), ("ai", "/ai/", "AI corpus")]
 
 
 def nav(active: str) -> str:
@@ -420,7 +423,7 @@ FOOTER = """<footer class="site"><div class="wrap">
 <li><a href="https://github.com/obs-rust/obs-studio/blob/master/docs/features.md">Features ledger</a></li>
 <li><a href="https://github.com/obs-rust/constitution/blob/main/CONSTITUTION.md">Constitution</a></li></ul></div>
 <div><h4>Build</h4><ul>
-<li><a href="/websocket/">WebSocket API</a></li><li><a href="/examples/">Examples</a></li>
+<li><a href="/websocket/">WebSocket API</a></li><li><a href="/mcp/">MCP server</a></li><li><a href="/examples/">Examples</a></li>
 <li><a href="https://github.com/obs-rust/obs-studio/issues?q=is%3Aopen+label%3Aready">Ready issues</a></li>
 <li><a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/testing-policy.md">Testing policy</a></li></ul></div>
 <div><h4>Agents &amp; community</h4><ul>
@@ -435,7 +438,7 @@ def render(tpl: str, ctx: dict, page_path: str) -> str:
     def head_sub(m):
         title, _, desc = m.group(1).partition("|")
         return head(title, desc, page_path)
-    tpl = re.sub(r"\{\{head:([^}]*)\}\}", head_sub, tpl)
+    tpl = re.sub(r"^\{\{head:(.*)\}\}$", head_sub, tpl, flags=re.M)
     tpl = re.sub(r"\{\{nav:(\w+)\}\}", lambda m: nav(m.group(1)), tpl)
     tpl = tpl.replace("{{footer}}", FOOTER)
 
@@ -492,6 +495,10 @@ def main() -> None:
                  "url": f"https://github.com/{WS_REPO}/blob/{ws_sha}/docs/generated/protocol.md"})
     docs.append({"group": "websocket", "path": "obs-websocket/reference.md", "text": protocol_md_reference(proto),
                  "url": f"{SITE}/websocket/"})
+    surface = mcpmod.load_surface(obs)
+    sessions = mcpmod.load_sessions(ROOT, surface)
+    mcp_md = mcpmod.corpus_markdown(surface, sessions)
+    docs.append({"group": "mcp", "path": "mcp/reference.md", "text": mcp_md, "url": f"{SITE}/mcp/"})
     chunks = []
     (out / "ai" / "docs").mkdir(parents=True)
     for d in docs:
@@ -509,7 +516,8 @@ def main() -> None:
         "chunks": chunks}, separators=(",", ":")))
 
     groups = {"project": "Project", "docs": "Project docs", "rust-port": "Rust port process",
-              "knowledge": "Hard-won lessons", "libobs-api": "libobs C API reference", "websocket": "obs-websocket v5"}
+              "knowledge": "Hard-won lessons", "libobs-api": "libobs C API reference", "websocket": "obs-websocket v5",
+              "mcp": "MCP server (agent control)"}
     llms = [f"# OBS Studio Rust (obs-rust)", "",
             "> obs-studio-rust is an independent, hybrid Rust/C/C++ rewrite of OBS Studio that keeps the libobs C "
             "ABI, the obs-websocket v5 protocol and the plugin/scripting APIs compatible. Source: "
@@ -523,6 +531,11 @@ def main() -> None:
             if d["group"] == g:
                 llms.append(f"- [{d['title']}]({SITE}{d['site_url']}): {d['path']}")
         llms.append("")
+    llms[llms.index("## MCP server (agent control)") + 1:llms.index("## MCP server (agent control)") + 1] = [
+        f"- [MCP server page]({SITE}/mcp/index.md): {len(surface['tools'])} typed tools to control a local "
+        "obs-studio-rust from an agent: config, requirements, sessions, reference",
+        f"- [MCP schema (JSON)]({SITE}/mcp/schema.json): pre-fetched tools/list + resources/list + ToolError, "
+        f"generated from obs-studio@{obs_sha[:9]}"]
     llms += ["## Optional", f"- [WebSocket API reference (HTML)]({SITE}/websocket/)",
              f"- [Examples]({SITE}/examples/)", f"- [Contributing with an AI agent](https://github.com/{REPO}#readme)", ""]
     (out / "llms.txt").write_text("\n".join(llms))
@@ -533,6 +546,12 @@ def main() -> None:
     (out / "llms-full.txt").write_text("\n".join(full) + "\n")
 
     ws_items, ws_nav = render_ws_items(proto)
+    mstats = mcpmod.write_artifacts(out, surface, sessions, obs_sha, now.isoformat(timespec="seconds"),
+                                    ROOT / "tools" / "vendor")
+    (out / "mcp" / "index.md").write_text(
+        f"---\ntitle: obs-studio-rust MCP server\nsource_commit: {obs_sha}\nurl: {SITE}/mcp/\n---\n" + mcp_md)
+    mref, mnav = mcpmod.render_reference(surface["tools"])
+    hero = mcpmod.render_transcript(next(x for x in sessions if x["slug"] == "record-when-ready"))
     ctx = {
         **{k: v for k, v in stats.items() if k != "release"},
         "release_tag": esc(rel["tag_name"]) if rel else "—",
@@ -548,6 +567,12 @@ def main() -> None:
         "build_date": f"{now:%Y-%m-%d}", "obs_sha": obs_sha, "obs_sha_short": obs_sha[:9],
         "ws_sha": ws_sha, "ws_sha_short": ws_sha[:9],
         "ws_items": ws_items, "ws_nav": ws_nav,
+        **mstats, "mcp_protocol": surface["protocol"], "mcp_ref": mref, "mcp_ref_nav": mnav,
+        "mcp_sessions": mcpmod.render_sessions(sessions), "mcp_hero_tx": hero,
+        "mcp_json_pretty": esc(json.dumps(surface["mcp_json"], separators=(",", ":"))),
+        "mcp_resources": "".join(f'<article class="tool"><header><span class="nm">{esc(r["uri"])}</span>'
+                                 f'<span class="tag">{esc(r["mimeType"])}</span></header><p>{esc(r["description"])}</p></article>'
+                                 for r in surface["resources"]),
     }
     pages = []
     for tpl in sorted((ROOT / "src").rglob("*.html")):
@@ -561,7 +586,7 @@ def main() -> None:
         dest.write_text(render(tpl.read_text(), ctx, page_path))
         if rel_path.name != "404.html":
             pages.append(page_path)
-    for extra in ["/llms.txt", "/llms-full.txt"]:
+    for extra in ["/llms.txt", "/llms-full.txt", "/mcp/schema.json", "/mcp/index.md"]:
         pages.append(extra)
     (out / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'

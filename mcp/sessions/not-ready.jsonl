@@ -1,0 +1,5 @@
+{"order":3,"title":"When it says no","summary":"The unhappy branches. A typed ToolError gives the agent a code, a category and whether retrying makes sense.","caveat":"The error object is ToolError from control-api.schema.json. Codes use the obs-websocket v5 status ranges."}
+{"from":"agent","note":"Wait for the camera, but it never comes up.","msg":{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"wait_for","arguments":{"condition":{"type":"source_active","name":"Camera"},"timeout_ms":3000}}}}
+{"from":"server","msg":{"jsonrpc":"2.0","id":5,"result":{"structuredContent":{"satisfied":false,"elapsed_ms":3000,"last_value":{"kind":"source","present":true,"active":false}},"isError":false}}}
+{"from":"agent","note":"Not satisfied, so don't record. Report what was observed instead. Next, try the start anyway with a short timeout:","msg":{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"record_start","arguments":{"wait":true,"timeout_ms":1000}}}}
+{"from":"server","msg":{"jsonrpc":"2.0","id":6,"result":{"structuredContent":{"code":207,"category":"not_ready","message":"output start timed out","retryable":true},"isError":true}}}

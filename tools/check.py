@@ -300,8 +300,8 @@ def check_one_system(site: Path) -> list[str]:
 
 # DESIGN.md §6, §8, backlog #28: the second capture, the social card, no orphan assets, four motions
 CARD = "assets/social-card.png"
-SHOT = re.compile(r'<img src="/assets/gpu-status-red\.webp"[^>]*>.*?href="https://github\.com/obs-rust/obs-studio/blob/'
-                  r'[0-9a-f]{40}/docs/images/gpu-status-red\.png"', re.S)
+SHOT = re.compile(r'<img src="/assets/gpu-usage-label-hw\.png"[^>]*>\s*<img class="i2" src="/assets/gpu-usage-label-sw\.png"'
+                  r'.*?href="https://github\.com/obs-rust/obs-studio/blob/[0-9a-f]{40}/docs/gpu-status\.md#L\d+"', re.S)
 
 
 def png_size(data: bytes) -> tuple[int, int]:
@@ -316,11 +316,14 @@ def check_finish(site: Path) -> list[str]:
     asset referenced, and motion only as §6 allows (one transition rule, at most 3 @keyframes, 1 repeating)."""
     errs: list[str] = []
     home = (site / "index.html").read_text() if (site / "index.html").is_file() else ""
-    shot = site / "assets/gpu-status-red.webp"
-    if not shot.is_file() or shot.stat().st_size > 120_000:
-        errs.append("assets/gpu-status-red.webp missing or over 120 KB")
+    for name in ("gpu-usage-label-hw.png", "gpu-usage-label-sw.png"):
+        shot = site / "assets" / name
+        if not shot.is_file() or shot.stat().st_size > 120_000:
+            errs.append(f"assets/{name} missing or over 120 KB")
+    if "mockup" in home.lower():
+        errs.append("index.html: a picture on / is labelled a mockup; D1 wants captures of the running program")
     if not SHOT.search(home):
-        errs.append("index.html: the GPU status capture lacks its receipt pinned to a commit")
+        errs.append("index.html: the GPU status captures lack their receipt pinned to a commit and line")
     card = site / CARD
     data = card.read_bytes() if card.is_file() else b""
     if png_size(data) != (1200, 630) or len(data) > 200_000:

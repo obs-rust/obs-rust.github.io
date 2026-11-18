@@ -91,15 +91,16 @@ details.chan>summary:hover h3 b{color:var(--rust-hi)}
 .feat .card h3{font-size:var(--t-19)}
 .feat .card .m,.shot .m{font:500 var(--t-label) var(--mono);color:var(--dim);display:flex;gap:8px;flex-wrap:wrap}
 /* the second capture, beside its ledger entry */
-.shot{margin:var(--s-3) 0 0;padding:var(--s-2);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);grid-template-areas:"i h" "i m" "i r" "d d";gap:var(--s-1) var(--s-2);align-items:start;align-content:start}
-.shot img{grid-area:i;display:block;width:100%;height:auto;border:1px solid #000;border-radius:var(--r-ctl)}
+.shot{margin:var(--s-3) 0 0;padding:var(--s-2);display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"i" "j" "h" "d" "m" "r";gap:var(--s-1) var(--s-2);align-items:start;align-content:start}
+.shot img{grid-area:i;display:block;width:calc(100% + 2*var(--s-2));margin:0 calc(-1*var(--s-2));height:auto;border:1px solid #000;border-radius:var(--r-ctl);image-rendering:auto}
+.shot img.i2{grid-area:j}
 .shot figcaption{display:contents}
 .shot h3{grid-area:h;font-size:var(--t-19)}
 .shot .d{grid-area:d;color:var(--dim);font-size:var(--t-ui)}
 .shot .m{grid-area:m}
 .shot .receipt{grid-area:r;margin:0}
 @media(min-width:900px){.ledger{display:grid;grid-template-columns:minmax(0,1fr) 324px;gap:var(--s-5);align-items:start}
-  .shot{margin:0;padding:var(--s-1);grid-template-columns:minmax(0,1fr);grid-template-areas:"i" "h" "d" "m" "r"}}
+  .shot{margin:0;padding:var(--s-1);grid-template-columns:minmax(0,1fr);grid-template-areas:"i" "j" "h" "d" "m" "r"}}
 
 /* tiers */
 .tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:var(--s-3);counter-reset:t}
@@ -246,12 +247,13 @@ details.chan>summary:hover h3 b{color:var(--rust-hi)}
     {{feature_cards}}
     </div>
     <figure class="plate shot">
-      <img src="{{gpu_src}}" width="{{gpu_w}}" height="{{gpu_h}}" alt="A mockup of the GPU acceleration light in the red state: the status bar light, the dialog that explains it and the graphics lines of the startup log." loading="lazy" decoding="async">
+      <img src="{{gpu_src}}" width="{{gpu_w}}" height="{{gpu_h}}" alt="{{gpu_alt}}" loading="lazy" decoding="async">
+      <img class="i2" src="{{gpu2_src}}" width="{{gpu2_w}}" height="{{gpu2_h}}" alt="{{gpu2_alt}}" loading="lazy" decoding="async">
       <figcaption>
         <h3>{{gpu_name}}</h3>
         <p class="d">{{gpu_desc}}</p>
         <div class="m"><span class="tag rust">{{gpu_area}}</span><span class="tag">{{gpu_platforms}}</span><span>{{gpu_date}}</span></div>
-        <p class="receipt">Picture: <a href="{{gpu_href}}">docs/images/gpu-status-red.png</a>, an earlier mockup from docs/gpu-status.md (styling approximate).</p>
+        <p class="receipt">Captures: <a href="{{gpu_href}}">docs/gpu-status.md</a>. {{gpu_intro}}</p>
       </figcaption>
     </figure>
   </div>

@@ -184,32 +184,45 @@ def hero_image(obs: Path, out: Path) -> HeroImage:
 
 
 # ---------------------------------------------------------------- the finish (DESIGN.md §6, backlog #28)
-GPU_SRC = "docs/images/gpu-status-red.png"
+GPU_DOC = "docs/gpu-status.md"
+GPU_SHOTS = ("docs/images/gpu-usage-label-hw.png", "docs/images/gpu-usage-label-sw.png")
 GPU_FEATURE = "GPU acceleration light"
 CARD_PATH, CARD_W, CARD_H, CARD_MAX_BYTES = "/assets/social-card.png", 1200, 630, 200_000
 
 
 def ledger_picture(obs: Path, out: Path, feats: list[Feature], obs_sha: str) -> LedgerPicture:
-    """Re-encode the GPU status capture like the hero and pair it with its ledger entry; fail if either is gone."""
+    """Upstream's two real status-bar captures and the sentence that introduces them in docs/gpu-status.md,
+    paired with the ledger entry; fail if a capture, its markdown line or the entry is gone (DESIGN.md D1, #31)."""
     from PIL import Image
 
-    src = obs / GPU_SRC
-    if not src.is_file():
-        raise SystemExit(f"picture: {GPU_SRC} missing from the obs-studio checkout (sparse path?)")
+    doc = (obs / GPU_DOC).read_text()
     entry = next((f for f in feats if f.name.rstrip(".") == GPU_FEATURE), None)
     if entry is None:
         raise SystemExit(f"picture: the features ledger has no entry named {GPU_FEATURE!r}")
-    dest = out / "assets" / "gpu-status-red.webp"
-    with Image.open(src) as im:
-        w, h = im.size
-        im.convert("RGB").save(dest, "WEBP", quality=82, method=6)
-    if dest.stat().st_size > HERO_MAX_BYTES:
-        raise SystemExit(f"picture: gpu-status-red.webp is {dest.stat().st_size} bytes (> {HERO_MAX_BYTES})")
+    shots: list[tuple[str, int, int, str]] = []
+    for rel in GPU_SHOTS:
+        src = obs / rel
+        if not src.is_file():
+            raise SystemExit(f"picture: {rel} missing from the obs-studio checkout (sparse path?)")
+        m = re.search(r"^!\[([^\]]+)\]\(" + re.escape(rel.removeprefix("docs/")) + r"\)$", doc, re.M)
+        if m is None:
+            raise SystemExit(f"picture: {GPU_DOC} no longer shows {rel}")
+        dest = out / "assets" / Path(rel).name
+        shutil.copyfile(src, dest)
+        with Image.open(src) as im:
+            w, h = im.size
+        shots.append((f"/assets/{dest.name}", w, h, esc(m[1])))
+    lead = re.search(r"\n(On an RTX[^\n]*\n[^\n]*:)\n", doc)
+    if lead is None:
+        raise SystemExit(f"picture: {GPU_DOC} no longer introduces the captures with 'On an RTX ...:'")
+    intro_text = " ".join(lead[1].split()).removesuffix(":") + "."
+    first_line = doc.count("\n", 0, lead.start(1)) + 1
     first = re.split(r"(?<=[.)])\s+(?=[A-Z])", md_inline(entry.desc), maxsplit=1)[0]
-    return LedgerPicture(gpu_src="/assets/gpu-status-red.webp", gpu_w=w, gpu_h=h,
-                         gpu_name=md_inline(entry.name.rstrip(".")), gpu_desc=first, gpu_area=esc(entry.area),
-                         gpu_platforms=esc(entry.platforms), gpu_date=esc(entry.date),
-                         gpu_href=f"https://github.com/{REPO}/blob/{obs_sha}/{GPU_SRC}")
+    (s1, w1, h1, a1), (s2, w2, h2, a2) = shots
+    return LedgerPicture(gpu_src=s1, gpu_w=w1, gpu_h=h1, gpu_alt=a1, gpu2_src=s2, gpu2_w=w2, gpu2_h=h2, gpu2_alt=a2,
+                         gpu_intro=esc(intro_text), gpu_name=md_inline(entry.name.rstrip(".")), gpu_desc=first,
+                         gpu_area=esc(entry.area), gpu_platforms=esc(entry.platforms), gpu_date=esc(entry.date),
+                         gpu_href=f"https://github.com/{REPO}/blob/{obs_sha}/{GPU_DOC}#L{first_line}")
 
 
 def social_card(obs: Path, out: Path, stats: RepoStats) -> SocialCard:

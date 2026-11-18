@@ -122,8 +122,31 @@ def main() -> int:
     # llms.txt link hygiene
     llms = (site / "llms.txt").read_text() if (site / "llms.txt").exists() else ""
     n_links = len(re.findall(r"^- \[", llms, re.M))
-    if n_links > 130:
-        errs.append(f"llms.txt has {n_links} links (> 130)")
+    if n_links > 80:
+        errs.append(f"llms.txt has {n_links} links (> 80)")
+    for m in re.finditer(r"^- \[[^\]]+\]\([^)]+\): (.*)$", llms, re.M):
+        if re.fullmatch(r"[\w./-]+\.(md|rst)", m[1].strip()):
+            errs.append(f"llms.txt: description is a file path: {m[1]}")
+
+    # corpus v2: schema, unique ids, one typed chunk per protocol item, prose chunk sizes
+    cj = site / "ai/corpus.json"
+    if cj.exists():
+        c = json.loads(cj.read_text())
+        if c.get("schema_version") != 2:
+            errs.append("corpus.json: schema_version != 2")
+        ids = [x["id"] for x in c["chunks"]]
+        if len(ids) != len(set(ids)):
+            errs.append("corpus.json: duplicate chunk ids")
+        proto = json.loads((site / "websocket/protocol.json").read_text())
+        for kind, key, name in (("ws-request", "requests", "requestType"), ("ws-event", "events", "eventType"),
+                                ("ws-enum", "enums", "enumType")):
+            want = {f"ws:{kind[3:]}:{x[name]}" for x in proto[key]}
+            got = {x["id"] for x in c["chunks"] if x["kind"] == kind}
+            if want != got:
+                errs.append(f"corpus.json: {kind} chunks differ from protocol.json: {sorted(want ^ got)[:5]}")
+        for x in c["chunks"]:
+            if x["kind"] == "prose" and x["chars"] > 2400 and "```" not in x["text"] and "\n|" not in x["text"]:
+                errs.append(f"corpus.json: prose chunk {x['id']} is {x['chars']} chars (> 2400)")
 
     for e in errs:
         print("FAIL", e)

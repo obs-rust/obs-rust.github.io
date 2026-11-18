@@ -69,7 +69,7 @@ Object.entries(LABEL).forEach(([g,l])=>{const o=document.createElement('option')
 let C=null,loading=null,docBy={};
 function load(){if(loading)return loading;$('#meta').textContent='Loading corpus…';
   loading=fetch('/ai/corpus.json').then(r=>r.json()).then(j=>{C=j;docBy=Object.fromEntries(C.docs.map(d=>[d.slug,d]));
-    for(const c of C.chunks){c._t=c.text.toLowerCase();c._h=(c.heading+' '+c.title).toLowerCase();}
+    for(const c of C.chunks){c._t=c.text.toLowerCase();c._h=c.breadcrumb.join(' ').toLowerCase();}
     $('#meta').textContent=`${C.chunks.length} chunks · ${C.docs.length} documents · generated ${C.generated.slice(0,10)}`;}).catch(()=>{$('#meta').textContent='Could not load corpus.json';});
   return loading;}
 async function search(){const raw=$('#q').value.trim(),g=$('#g').value;const terms=raw.toLowerCase().split(/\s+/).filter(t=>t.length>1);
@@ -81,8 +81,8 @@ async function search(){const raw=$('#q').value.trim(),g=$('#g').value;const ter
   scored.sort((a,b)=>b[0]-a[0]);const re=new RegExp('('+terms.map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','gi');
   $('#hits').innerHTML=`<p class="muted" style="font:500 13px var(--mono);margin:8px 0">${scored.length} matching chunks</p>`+scored.slice(0,40).map(([s,c])=>{const d=docBy[c.doc];
     let i=c._t.indexOf(terms[0]);i=Math.max(0,i-200);const snip=(i?'…':'')+c.text.slice(i,i+900);
-    return `<div class="hit"><div class="t"><a href="${d.site_url}">${esc(d.title)}</a><span class="tag">${esc(LABEL[c.group]||c.group)}</span><a class="tag" href="${esc(c.source)}">source ↗</a></div>
-      <div class="h">§ ${esc(c.heading||'(top)')} · ${esc(c.id)}</div><pre>${esc(snip).replace(re,'<mark>$1</mark>')}</pre></div>`;}).join('');}
+    return `<div class="hit"><div class="t"><a href="${esc(c.url)}">${esc(d.title)}</a><span class="tag">${esc(LABEL[c.group]||c.group)}</span><a class="tag" href="${esc(c.source)}">source ↗</a></div>
+      <div class="h">§ ${esc(c.breadcrumb.slice(1).join(' › ')||'(top)')} · ${esc(c.kind)} · ${esc(c.id)}</div><pre>${esc(snip).replace(re,'<mark>$1</mark>')}</pre></div>`;}).join('');}
 let tm;$('#q').addEventListener('focus',load,{once:true});$('#q').addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(search,120);});$('#g').addEventListener('change',search);
 const m=location.hash.match(/^#q=(.*)/);if(m){$('#q').value=decodeURIComponent(m[1]);search();}
 })();

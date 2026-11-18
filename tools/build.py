@@ -30,6 +30,7 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import corpus as corpusmod  # noqa: E402
 import mcp as mcpmod  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -160,6 +161,11 @@ def parse_ledger(text: str) -> dict:
         f["desc"] = re.split(r"\s\*[A-Za-z, ]+\*,\s*\d{4}", rest)[0].strip()
         f["pr"] = (re.findall(r"\[#(\d+)\]\(https://github.com/obs-rust/obs-studio/pull/\d+\)", rest) or [""])[0]
     return {"features": feats, "fixed": fixed}
+
+
+def parse_ledger_items(text: str) -> list[dict]:
+    r = parse_ledger(text)
+    return r["features"] + r["fixed"]
 
 
 def render_feature_cards(feats: list[dict], n: int = 9) -> str:
@@ -498,49 +504,55 @@ def main() -> None:
     sessions = mcpmod.load_sessions(ROOT, surface)
     mcp_md = mcpmod.corpus_markdown(surface, sessions)
     docs.append({"group": "mcp", "path": "mcp/reference.md", "text": mcp_md, "url": f"{SITE}/mcp/"})
-    chunks = []
     (out / "ai" / "docs").mkdir(parents=True)
+    ledger_items = parse_ledger_items((obs / "docs/features.md").read_text())
     for d in docs:
         d["title"] = first_heading(d["text"], Path(d["path"]).stem)
         d["slug"] = slug(d["path"].rsplit(".", 1)[0])
         d["site_url"] = f"/ai/docs/{d['slug']}.md"
+        d["tier"] = corpusmod.tier(d["path"])
+        d["source"] = (d["url"].replace("/blob/master/", f"/blob/{obs_sha}/") if d["url"].startswith("https://github.com/")
+                       else d["url"])
         (out / "ai" / "docs" / f"{d['slug']}.md").write_text(
-            f"<!-- source: {d['url']} -->\n{d['text'].strip()}\n")
-        for n, (h, t) in enumerate(chunk(d["text"])):
-            chunks.append({"id": f"{d['slug']}#{n}", "doc": d["slug"], "group": d["group"], "title": d["title"],
-                           "heading": h, "source": d["url"], "text": t})
+            f"---\ntitle: {json.dumps(d['title'])}\nsource: {d['source']}\ncommit: {obs_sha}\n"
+            f"tier: {d['tier']}\ntokens_est: {corpusmod.tokens_est(d['text'])}\n---\n{d['text'].strip()}\n")
+    chunks = []
+    for d in docs:
+        if d["path"] == "obs-websocket/reference.md":
+            chunks += corpusmod.ws_chunks(d, proto, SITE)
+        elif d["path"] == "mcp/reference.md":
+            chunks += corpusmod.mcp_chunks(d, surface, SITE, mcpmod.fields_rows)
+        elif d["path"] == "obs-websocket/docs/generated/protocol.md":
+            # narrative only (connecting, auth, opcodes); items come from protocol.json as typed chunks
+            chunks += corpusmod.prose_chunks({**d, "text": d["text"].split("\n# Enums")[0]}, d["title"])
+        elif d["path"] == "docs/features.md":
+            chunks += corpusmod.prose_chunks({**d, "text": d["text"].split("\n## Features")[0]}, d["title"])
+            chunks += corpusmod.ledger_chunks(d, ledger_items)
+        else:
+            chunks += corpusmod.prose_chunks(d, d["title"])
+    ids = [c["id"] for c in chunks]
+    if len(ids) != len(set(ids)):
+        raise SystemExit(f"corpus: duplicate chunk ids: {sorted({i for i in ids if ids.count(i) > 1})[:10]}")
     (out / "ai" / "corpus.json").write_text(json.dumps({
+        "schema_version": corpusmod.SCHEMA_VERSION,
         "generated": now.isoformat(timespec="seconds"), "obs_studio_commit": obs_sha, "obs_websocket_commit": ws_sha,
-        "docs": [{k: d[k] for k in ("slug", "group", "title", "path", "url", "site_url")} for d in docs],
+        "docs": [{k: d[k] for k in ("slug", "group", "tier", "title", "path", "url", "site_url")} for d in docs],
         "chunks": chunks}, separators=(",", ":")))
+    (out / "ai" / "corpus").mkdir()
+    for g in sorted({c["group"] for c in chunks}):
+        (out / "ai" / "corpus" / f"{g}.jsonl").write_text(
+            "\n".join(json.dumps(c, separators=(",", ":")) for c in chunks if c["group"] == g) + "\n")
 
     groups = {"project": "Project", "docs": "Project docs", "rust-port": "Rust port process",
               "knowledge": "Hard-won lessons", "libobs-api": "libobs C API reference", "websocket": "obs-websocket v5",
               "mcp": "MCP server (agent control)"}
-    llms = [f"# OBS Studio Rust (obs-rust)", "",
-            "> obs-studio-rust is an independent, hybrid Rust/C/C++ rewrite of OBS Studio that keeps the libobs C "
-            "ABI, the obs-websocket v5 protocol and the plugin/scripting APIs compatible. Source: "
-            f"https://github.com/{REPO}. Beta downloads: https://github.com/{REPO}/releases.", "",
-            f"Generated {now:%Y-%m-%d} from obs-studio@{obs_sha[:9]} and obs-websocket@{ws_sha[:9]}. "
-            f"Core bundle for one context window: {SITE}/llms-ctx.txt. The whole corpus in one file: {SITE}/llms-full.txt. Chunked JSON for retrieval: {SITE}/ai/corpus.json "
-            f"(fields: id, doc, group, title, heading, source, text). Raw protocol: {SITE}/websocket/protocol.json.", ""]
-    for g, label in groups.items():
-        llms.append(f"## {label}")
-        for d in docs:
-            if d["group"] == g:
-                llms.append(f"- [{d['title']}]({SITE}{d['site_url']}): {d['path']}")
-        llms.append("")
-    llms[llms.index("## MCP server (agent control)") + 1:llms.index("## MCP server (agent control)") + 1] = [
-        f"- [MCP server page]({SITE}/mcp/index.md): {len(surface['tools'])} typed tools to control a local "
-        "obs-studio-rust from an agent: config, requirements, sessions, reference",
-        f"- [MCP schema (JSON)]({SITE}/mcp/schema.json): pre-fetched tools/list + resources/list + ToolError, "
-        f"generated from obs-studio@{obs_sha[:9]}"]
-    llms += ["## Optional", f"- [WebSocket API reference (HTML)]({SITE}/websocket/)",
-             f"- [Examples]({SITE}/examples/)", f"- [Contributing with an AI agent](https://github.com/{REPO}#readme)", ""]
-    (out / "llms.txt").write_text("\n".join(llms))
-    full = [llms[0], "", llms[2], ""]
+    title = "# OBS Studio Rust (obs-rust)"
+    blurb = ("> obs-studio-rust is an independent, hybrid Rust/C/C++ rewrite of OBS Studio that keeps the libobs C "
+             "ABI, the obs-websocket v5 protocol and the plugin/scripting APIs compatible. It ships beta builds for "
+             f"Windows, macOS and Linux, and a local MCP server for agents. Source: https://github.com/{REPO}.")
+    full = [title, "", blurb, ""]
     for d in docs:
-        full.append(f"\n\n<!-- ===== {d['path']} | {d['url']} ===== -->\n")
+        full.append(f"\n\n<!-- ===== {d['path']} | {d['source']} ===== -->\n")
         full.append(d["text"].strip())
     (out / "llms-full.txt").write_text("\n".join(full) + "\n")
 
@@ -553,7 +565,7 @@ def main() -> None:
     if missing_core:
         raise SystemExit(f"llms-ctx: core docs missing: {missing_core}")
     rel0 = stats["release"]
-    ctx_txt = [llms[0], "", llms[2], "",
+    ctx_txt = [title, "", blurb, "",
                f"Core context bundle, generated {now:%Y-%m-%d} from obs-studio@{obs_sha[:9]}. "
                f"Everything else: {SITE}/llms.txt (index) and {SITE}/llms-full.txt (all docs).", "",
                "## Download", f"Latest release: {rel0['tag_name'] if rel0 else 'none'} "
@@ -561,11 +573,33 @@ def main() -> None:
                "Assets: " + ", ".join(a["name"] for a in (rel0 or {}).get("assets", [])), ""]
     for c in core:
         d = by_path[c]
-        ctx_txt += [f"\n\n<!-- ===== {d['path']} | {d['url']} ===== -->\n", d["text"].strip()]
+        ctx_txt += [f"\n\n<!-- ===== {d['path']} | {d['source']} ===== -->\n", d["text"].strip()]
     (out / "llms-ctx.txt").write_text("\n".join(ctx_txt) + "\n")
     ctx_kb = (out / "llms-ctx.txt").stat().st_size / 1024
     if ctx_kb > 300:
         raise SystemExit(f"llms-ctx.txt is {ctx_kb:.0f} KB, over the 300 KB budget")
+
+    size = lambda f: (out / f.lstrip("/")).stat().st_size  # noqa: E731
+    feeds = [("llms-ctx.txt: core bundle, one context window", "/llms-ctx.txt", size("/llms-ctx.txt")),
+             ("llms-full.txt: every document", "/llms-full.txt", size("/llms-full.txt")),
+             ("corpus.json: typed chunks with breadcrumbs, for retrieval", "/ai/corpus.json", size("/ai/corpus.json")),
+             ("protocol.json: obs-websocket v5 spec", "/websocket/protocol.json", size("/websocket/protocol.json"))]
+    header = [title, "", blurb, "",
+              f"Generated {now:%Y-%m-%d} from obs-studio@{obs_sha[:9]} and obs-websocket@{ws_sha[:9]}. "
+              f"Latest release: {rel0['tag_name'] if rel0 else 'none'}. corpus.json has schema_version "
+              f"{corpusmod.SCHEMA_VERSION}, {len(chunks)} chunks, and is also split per group under /ai/corpus/<group>.jsonl.", ""]
+    extra = {
+        "Start here": [f"- [Download the beta]({rel0['html_url'] if rel0 else f'https://github.com/{REPO}/releases'}): "
+                       "Windows (msi, zip), macOS (dmg), Linux (AppImage, deb, Flatpak); installs beside upstream OBS"],
+        "Control OBS": [
+            f"- [MCP server]({SITE}/mcp/index.md): {len(surface['tools'])} typed tools to control a local "
+            "obs-studio-rust from an agent: client config, requirements, sessions, reference",
+            f"- [MCP schema (JSON)]({SITE}/mcp/schema.json): pre-fetched tools/list + resources/list + ToolError",
+            f"- [WebSocket API reference (HTML)]({SITE}/websocket/): every obs-websocket v5 request, event and enum, "
+            "with a live console",
+            f"- [Examples]({SITE}/examples/): Rust, Python, JS and raw-socket clients, batch requests, scripts, plugins"],
+    }
+    (out / "llms.txt").write_text(corpusmod.llms_txt(docs, header, SITE, feeds, extra))
 
     ws_items, ws_nav = render_ws_items(proto)
     mstats = mcpmod.write_artifacts(out, surface, sessions, obs_sha, now.isoformat(timespec="seconds"),

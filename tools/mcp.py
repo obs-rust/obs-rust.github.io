@@ -288,15 +288,19 @@ def render_reference(tools: list[McpTool]) -> tuple[str, str]:
                         + esc(" ".join(types)))
             call = ToolCallRequest(jsonrpc="2.0", id=1, method="tools/call",
                                    params=ToolCallParams(name=n, arguments=minimal_args(t.inputSchema, t.inputSchema)))
+            first = re.match(r"(.+?[.!?])(\s|$)", t.description)
+            line = (first.group(1) if first else t.description) if not placeholder(t.description) else \
+                "Upstream description is a placeholder."
             items.append(
-                f'<article class="tool" id="{n}" data-ro="{str(t.annotations.readOnlyHint).lower()}" '
+                f'<details class="tool" data-ro="{str(t.annotations.readOnlyHint).lower()}" '
                 f'data-search="{esc((n + " " + t.description).lower())}">'
-                f'<header><a class="nm" href="#{n}">{n}</a><span class="tag {cls}">{label}</span>'
-                f'<a class="tag" href="/mcp/tools/{n}.json">json</a></header>'
+                f'<summary id="{n}"><span class="nm">{n}</span><span class="tag {cls}">{label}</span>'
+                f'<span class="sd">{esc(line)}</span></summary><div class="bd">'
+                f'<div class="eh"><a class="pl" href="#{n}">#{n}</a><a class="tag" href="/mcp/tools/{n}.json">json</a></div>'
                 f'<p>{desc}</p><p class="hints">{esc(hints)}</p>'
                 f'<h4>Arguments</h4>{rows_html(fields_rows(t.inputSchema, t.inputSchema))}'
                 f'<h4>Returns</h4>{rows_html(fields_rows(t.outputSchema, t.outputSchema))}'
-                f'<details><summary>Call it</summary><pre>{esc(msg_json(call))}</pre></details></article>')
+                f'<details class="exm"><summary>Call it</summary><pre>{esc(msg_json(call))}</pre></details></div></details>')
         cards.append(f'<section class="grp" id="g-{gid}"><h3>{gname}</h3><p class="muted">{gdesc}</p>{"".join(items)}</section>')
     return "".join(cards), "".join(nav)
 

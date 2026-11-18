@@ -5,11 +5,12 @@
 <link rel="alternate" type="application/json" title="MCP schema" href="/mcp/schema.json">
 <link rel="alternate" type="text/markdown" title="MCP reference (markdown)" href="/mcp/index.md">
 <style>
-.mh{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:var(--s-5);align-items:start;padding-bottom:var(--s-3)}
+.mh{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-areas:"intro panel" "rest panel";grid-template-rows:auto 1fr;gap:0 var(--s-5);align-items:start;padding-bottom:var(--s-3)}
+.mh .intro{grid-area:intro}.mh .rest{grid-area:rest}.mh .hero-tx{grid-area:panel}
 .cfg{margin-top:20px}
 .hero-tx{padding:16px}
 .hero-tx .txh{font:700 var(--t-label) var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
-@media(max-width:940px){.mh{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:940px){.mh{grid-template-columns:minmax(0,1fr);grid-template-areas:"intro" "panel" "rest";gap:var(--s-3)}}
 .cols b{font:800 var(--t-40)/1 var(--stencil)}
 .cols .ro b{color:var(--cu-hi)}.cols .id b{color:var(--fg2)}.cols .mu b{color:var(--rust)}
 .reqs .card{padding:16px 18px}
@@ -36,17 +37,33 @@
 .filter label{font:600 var(--t-label) var(--mono);color:var(--fg2);display:flex;gap:6px;align-items:center;cursor:pointer}
 .grp{padding:0;margin-top:var(--s-3);scroll-margin-top:120px}
 .grp>h3{font:800 var(--t-30) var(--stencil);color:var(--fg)}
-.tool{padding:18px 0;border-bottom:1px solid var(--edge);scroll-margin-top:130px}
+/* tools: closed by default; the summary carries the anchor, the name, its annotation and one line */
+.tool{border-bottom:1px solid var(--edge)}
 .tool.hide{display:none}
-.tool header a.tag{min-height:24px;display:inline-flex;align-items:center}
-.tool header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
-.tool .nm{font:700 var(--t-19) var(--mono);color:var(--fg)}
-.tool:target{box-shadow:inset 3px 0 0 var(--rust);padding-left:14px;background:linear-gradient(90deg,rgba(232,99,26,.08),transparent 60%)}
+.tool>summary{display:flex;align-items:baseline;gap:8px;padding:7px 4px;list-style:none;cursor:pointer;scroll-margin-top:130px;min-width:0}
+.tool>summary::-webkit-details-marker{display:none}
+.tool>summary::before{content:"▸";flex:none;width:12px;color:var(--dim);font:var(--t-12) var(--mono);transition:transform .15s}
+.tool[open]>summary::before{transform:rotate(90deg)}
+.tool>summary:hover{background:rgba(255,255,255,.03)}
+.tool>summary .tag{flex:none}
+.tool .nm{flex:none;font:700 var(--t-15) var(--mono);color:var(--fg)}
+.tool>summary:hover .nm{color:var(--rust-hi)}
+.tool .sd{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim);font-size:var(--t-15)}
+.tool:has(>summary:target){box-shadow:inset 3px 0 0 var(--rust);background:linear-gradient(90deg,rgba(232,99,26,.08),transparent 60%)}
+.tool .bd{padding:4px 4px var(--s-3) 24px}
+.tool .eh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
+.tool .eh a.tag{min-height:24px;display:inline-flex;align-items:center}
+.tool .pl{font:500 var(--t-13) var(--mono);color:var(--dim)}
 .tool p{color:var(--fg2)}
 .tool .hints{font:500 var(--t-label) var(--mono);color:var(--dim)}
 .tool h4{font:700 var(--t-label) var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:12px 0 4px}
 .tool .none{font-size:var(--t-ui)}
-.tool details{margin-top:8px}.tool details summary{font:600 var(--t-label) var(--mono);color:var(--dim);cursor:pointer}
+.tool .exm{margin-top:8px}.tool .exm summary{font:600 var(--t-label) var(--mono);color:var(--dim);cursor:pointer}
+@media(max-width:700px){.tool>summary{flex-wrap:wrap}.tool .sd{flex-basis:100%;padding-left:20px}}
+.res{padding:12px 0;border-bottom:1px solid var(--edge)}
+.res header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
+.res .nm{font:700 var(--t-15) var(--mono);color:var(--fg);overflow-wrap:anywhere;min-width:0}
+.res p{color:var(--fg2);font-size:var(--t-ui)}
 .ft td{padding:7px 10px}
 @media(max-width:900px){.ref{grid-template-columns:minmax(0,1fr)}.rnav{display:none}.ft .ty{white-space:normal}}
 table.list td:first-child{font:600 var(--t-13) var(--mono);white-space:nowrap}
@@ -56,10 +73,12 @@ table.list td:first-child{font:600 var(--t-13) var(--mono);white-space:nowrap}
 {{nav:mcp}}
 <main id="main" class="wrap">
   <div class="mh start">
-    <div>
+    <div class="intro">
       <span class="eyebrow">Model Context Protocol · {{mcp_protocol}}</span>
       <h1>Give your agent <em>OBS</em></h1>
       <p class="lede">obs-studio-rust includes a local MCP server that calls libobs directly. It has {{n_tools}} typed tools, with input and output schemas and machine-readable errors. An agent can build scenes, go live, take screenshots and wait on real conditions, without screen-scraping or fixed sleeps.</p>
+    </div>
+    <div class="rest">
       <div class="cfg">
         <pre><span class="c"># 1. build once, inside an obs-studio checkout</span>
 git clone https://github.com/obs-rust/obs-studio && cd obs-studio
@@ -75,7 +94,7 @@ claude mcp add obs -- "$PWD/mcp" --mcp</pre>
         <a class="btn ghost" href="#reference">Tool reference</a>
       </div>
     </div>
-    <div class="plate hero-tx">
+    <div class="plate hero-tx" data-object>
       <h2 class="txh">An agent session · schema-validated example</h2>
       {{mcp_hero_tx}}
     </div>
@@ -173,6 +192,10 @@ document.querySelectorAll('.tabset').forEach(ts=>{const b=[...ts.querySelectorAl
   b.forEach((x,i)=>x.addEventListener('click',()=>{b.forEach((y,j)=>y.setAttribute('aria-selected',i===j));p.forEach((y,j)=>y.classList.toggle('on',i===j));}));});
 document.querySelectorAll('pre').forEach(pre=>{const c=document.createElement('button');c.className='copy';c.textContent='copy';
   c.onclick=()=>{const t=pre.cloneNode(true);t.querySelector('.copy')?.remove();navigator.clipboard.writeText(t.innerText).then(()=>{c.textContent='copied';setTimeout(()=>c.textContent='copy',1200);});};pre.appendChild(c);});
+// a #name link opens its tool, on load, on hashchange and when the same link is followed again
+(()=>{const open=()=>{const t=location.hash.length>1&&document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  const d=t&&t.closest('details.tool');if(d&&!d.open){d.open=true;t.scrollIntoView();}};
+addEventListener('hashchange',open);addEventListener('click',e=>{if(e.target.closest('a[href^="#"]'))setTimeout(open);});open();})();
 (()=>{const q=document.getElementById('tq'),ro=document.getElementById('ro'),tc=document.getElementById('tc'),ts=[...document.querySelectorAll('.tool')];
 const f=()=>{const w=q.value.toLowerCase().split(/\s+/).filter(Boolean);let n=0;for(const t of ts){const ok=(!ro.checked||t.dataset.ro==='true')&&w.every(x=>t.dataset.search.includes(x));t.classList.toggle('hide',!ok);if(ok)n++;}tc.textContent=n+' / '+ts.length;};
 q.addEventListener('input',f);ro.addEventListener('change',f);f();})();

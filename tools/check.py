@@ -135,7 +135,7 @@ def main() -> int:
     # MCP reference matches the published schema
     if (site / "mcp/schema.json").exists():
         tools = {t.name for t in McpSchemaFile.model_validate_json((site / "mcp/schema.json").read_text()).tools}
-        cards = set(re.findall(r'<article class="tool" id="([a-z_]+)"', (site / "mcp/index.html").read_text()))
+        cards = set(re.findall(r'<details class="tool"[^>]*><summary id="([a-z_]+)"', (site / "mcp/index.html").read_text()))
         if tools != cards:
             errs.append(f"mcp: reference cards differ from schema.json: {sorted(tools ^ cards)}")
         for t in tools:
@@ -195,7 +195,7 @@ def main() -> int:
         errs.append(f"index.html: {n_dl} SHA-256 lines do not match the download links")
 
     # stable and beta channels, each with 3+ hashed files; limits quoted with a README receipt (P0 #5, #8)
-    chans = re.findall(r'<div class="chan" id="([a-z]+)">(.*?)(?=<div class="chan"|<div class="limits)', home, re.S)
+    chans = re.findall(r'<(?:div|details) class="chan" id="([a-z]+)">(.*?)(?=<(?:div|details) class="chan"|<div class="limits)', home, re.S)
     if {c for c, _ in chans} != {"stable", "beta"}:
         errs.append(f"index.html: download channels are {[c for c, _ in chans]}, want stable and beta")
     for name, body in chans:
@@ -229,6 +229,7 @@ def main() -> int:
                 break
 
     errs.extend(check_one_system(site))
+    errs.extend(check_object_first(site))
 
     # agent router and manifest (DESIGN.md P0 #2)
     llms_text = (site / "llms.txt").read_text()
@@ -293,6 +294,50 @@ def check_one_system(site: Path) -> list[str]:
             parts = re.findall(r"var\([^)]*\)|\S+", m[1].strip())
             if any(part != "0" and not part.startswith("var(--r-") for part in parts):
                 errs.append(f"{rel}: radius is not a --r-* token: {m[0].strip()!r}")
+    return errs
+
+
+# DESIGN.md §5: the one object each page opens on
+OBJECT_PAGES = ("index.html", "websocket/index.html", "examples/index.html", "ai/index.html", "mcp/index.html")
+HASH_OPENER = re.compile(r"addEventListener\(['\"]hashchange['\"]")
+
+
+def opened(text: str, cls: str) -> bool:
+    """Whether any <details class="cls"> carries the open attribute (attribute values stripped first)."""
+    for attrs in re.findall(rf'<details class="{cls}"((?:\s+[\w-]+(?:="[^"]*")?)*)\s*>', text):
+        if re.search(r"\sopen(?:\s|=|$)", re.sub(r'="[^"]*"', "", attrs)):
+            return True
+    return False
+
+
+def check_object_first(site: Path) -> list[str]:
+    """S2 (DESIGN.md §5, §8, backlog #27): each page marks one object; long references are closed entries whose
+    summary carries the anchor, and a #Name link opens its entry."""
+    errs: list[str] = []
+    for rel in OBJECT_PAGES:
+        f = site / rel
+        n = len(re.findall(r"<[a-z]+\b[^>]*\sdata-object[\s>=]", f.read_text())) if f.is_file() else 0
+        if n != 1:
+            errs.append(f"{rel}: {n} elements marked data-object, want exactly 1")
+    ws, mcp = site / "websocket/index.html", site / "mcp/index.html"
+    if ws.is_file() and (site / "websocket/protocol.json").is_file():
+        text = ws.read_text()
+        proto = WsProtocol.model_validate_json((site / "websocket/protocol.json").read_text())
+        names = [r.requestType for r in proto.requests] + [e.eventType for e in proto.events] + [x.enumType for x in proto.enums]
+        anchored = set(re.findall(r'<details class="it"[^>]*><summary id="([A-Za-z]+)">', text))
+        missing = [x for x in names if x not in anchored]
+        if missing:
+            errs.append(f"websocket: {len(missing)} entries are not a <details> whose summary carries the id, e.g. {missing[0]}")
+        if opened(text, "it"):
+            errs.append("websocket: a reference entry is open by default")
+    if mcp.is_file() and opened(mcp.read_text(), "tool"):
+        errs.append("mcp: a tool entry is open by default")
+    for f in (ws, mcp):
+        if f.is_file() and not HASH_OPENER.search(f.read_text()):
+            errs.append(f"{f.relative_to(site)}: no hashchange handler to open the entry a #Name link points at")
+    home = (site / "index.html").read_text() if (site / "index.html").is_file() else ""
+    if '<div class="chan" id="stable">' not in home or '<details class="chan" id="beta">' not in home:
+        errs.append("index.html: the stable files must stay open and the beta files close")
     return errs
 
 

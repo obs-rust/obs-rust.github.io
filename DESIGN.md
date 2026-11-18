@@ -1,17 +1,17 @@
 # obs-rust.com — design document
 
-Revision 7 — 2026-11-18. Living document; supersedes Revision 6 (same day, in git history).
+Revision 8 — 2026-11-18. Living document; supersedes Revision 7 (same day, in git history).
 
 Revision 6 raised the bar from "nothing wrong" to "stunningly good" with five craft items, #26
-to #30. This revision refines it and adds no work: P0 is empty since PR #16 and #30 shipped in
-#18; the four items left are in build order with their files and the §11 lines each turns
-green (§10); checks that were entangled, flaky, unreachable or not worth their cost are fixed
-or dropped (§11, "What changed"). Measured on https://obs-rust.com, 2026-11-18, 10:36 to 10:48
-UTC (site `3b5904f`, then `d1de09d`).
+to #30; Revision 7 put them in build order. This revision adds no work and leaves the §11
+script and probe byte for byte as they were: it records #26 as shipped (PR #20, §2), corrects
+the critique and live figures that PR changed (§3, §8), and writes the judge's brief (§12).
+Three items remain (§10): #27, being built, then #28 and #29. Measured on
+https://obs-rust.com, 2026-11-18, 11:36 to 11:43 UTC (site `b498bf9`).
 
-**Revision 6's script: 18 `FAIL` lines** at 10:36 (19 before #16). **Revision 7's script: 29**
-at 10:44 and 10:46, after #18: the same faults less search, one line per item and page (10 for
-#26, 10 for #27, 8 for #28, 1 for #29), so each PR turns whole lines green.
+**The script printed 29 `FAIL` lines** at 10:46 UTC, before #20, and **19 at 11:36 and 11:41
+UTC**, after it: the 10 `S1` lines are green and no other line moved. The 19 are 10 `S2` (#27:
+no page has a `data-object`; three are over length), 8 `S3` (#28) and 1 `S4` (#29).
 
 ## 1. Position
 
@@ -37,29 +37,25 @@ When goals conflict: truth of a claim, then agent-readable text, then visual pol
 | R5 P0 4, 2: promises reworded, figure pinned, agent path closed | None of the six banned phrases on any page (A3): "Built to stay compatible"; "clients written for obs-websocket v5 (OBS 28 and later) are expected to work against it unchanged". `/` links `blob/fc58e78c…/conversion.json`, whose `libobs.all.percent` is 60.36, shown as 60.4% (A6). The `--dangerously-skip-permissions` block opens with a `.caution` paragraph. 0 of 1709 chunks hold `<img`, `<p align` or shields.io; "Linux" is in the first 1500 characters of `/mcp/index.md`; `site-control.md` says the MCP server runs "on the OBS machine itself (Linux)" and "A WebSocket client may run remotely" (A7) | #15 |
 | R6 P1 #30: search that answers | On `/ai/#q=install%20on%20windows` the first of 25 hits is `site-download.md#windows-x64-arm64`; `SetInputSettings` and `wait_for` put their typed chunk first (A8). Six example queries; `/` focuses `#q`; the tallest of the first five cards is 150 px, each with a copy button; `#meta` is `aria-live` and reads "25 results for …" (S5). Merged 10:40 UTC during this revision; A8 and both S5 lines are green | #18 |
 | R6 P0 5c: the action on the phone's first screen | At 390x844 the first screen holds the link "Download v1.0.0 ↓" (outside the header) and the whole monitor, 358 px wide, ending 0.73 screens down; B "/ first screen at 390 px" prints nothing (10:36 UTC, site `3ad32a9` and later) | #16 |
+| R7 P1 #26: one system on every page | Probed at 1440 and 390 px on the five pages, 11:36 UTC, site `b498bf9` (merged 11:19 UTC): every text size is one of the 11 on the scale (38 distinct sizes before); h1 is 72 px and 40 px on all five; radii are 4 px, 6 px and 50% only; body text is 40 em wide at most (51 and 72 before); no card row ends in a lone card. `site.css` declares `--t-12` to `--t-96` and `--r-ctl`, `--r-plate`, `--r-light`; the HTML of the six pages holds no `font-size` or `border-radius` px literal. All 10 `S1` lines are green and no A, B or S5 line regressed. D5 ("one hand") is the judge's to answer | #20 |
 
 ## 3. Critique of the live site: correct, not yet stunning
 
 Seen as a designer, in screenshots at 1440x900 and 390x844 and in computed styles read by the
-§11 probe. The pages are honest and tidy. They are also five pages by five hands, mostly text,
-that never move, and whose two instruments (console and search) wait below the fold. Search
-itself now answers (#18).
+§11 probe. The pages are honest and tidy, and since #20 they are one system. They are also
+mostly text, they never move, and their two instruments (console and search) wait below the
+fold. Search itself answers (#18).
 
-1. **No type scale, and the pages disagree.** 38 distinct font sizes are in use, 20 of them on
-   `/` (12.9, 13.5, 21, 24, 34, 39.52, 104 ...). The h1 is 72 px on `/`, 84 px on three pages,
-   96 px on `/mcp/`, 128 px on the 404; a section h2 is 52 px on `/`, 38 px on `/examples/`.
-   Radii are 3, 4, 6, 8 and 10 px. Paragraphs run 51 em wide on four pages and 72 em on `/`
-   (about 105 and 150 characters a line). `/` and `/ai/` end a four-card row with a lone card.
-2. **Four of five pages open on words.** On `/websocket/` the console starts 0.68 screens down
+1. **Four of five pages open on words.** On `/websocket/` the console starts 0.68 screens down
    at 1440 px and 1.46 at 390 px, under four "op" cards; on `/ai/` the search box is 2.19 and
-   3.92 screens down, under five feed cards. The site has one picture; `og:image` is a 768 KB
-   square; a 643 KB logo ships unreferenced.
-3. **Too long to scan.** `/websocket/` is 84 screens at 1440 px and 151 at 390 px, every entry
-   open; `/mcp/` is 20 and 34; `/` is 8 and 17, of which the download section is 5.5 and
-   "what changed" 3.1 at 390 px.
-4. **Nothing moves.** No element animates. 25% of links and buttons on `/` ease on hover and
+   3.92 screens down, under five feed cards (Revision 7's measure). The site has one picture;
+   `og:image` is a 768 KB square; a 643 KB logo ships unreferenced.
+2. **Too long to scan.** `/websocket/` is 87 screens at 1440 px and 157 at 390 px, every entry
+   open; `/mcp/` is 20 and 34; `/` is 8.4 and 16.6, most of it the download section and
+   "what changed".
+3. **Nothing moves.** No element animates. 25% of links and buttons on `/` ease on hover and
    0% to 6% elsewhere, so a button fades on one page and snaps on the next.
-5. **The console is a blank box until you own an OBS**: an empty log and a JSON textarea.
+4. **The console is a blank box until you own an OBS**: an empty log and a JSON textarea.
 ## 4. Principles and constraints
 
 1. **Receipts, visibly.** Every figure is computed at build time and shows its source, commit
@@ -182,12 +178,12 @@ Checked by `tools/check.py` on `_site/`, and by §11 on the live site. Live valu
 | Budget | Limit |
 |---|---|
 | Third-party origins requested by any page | 0 [0] |
-| HTML gzipped: `/` with CSS; `/websocket/`; `/mcp/`; `/ai/` | 40 KB [13.3]; 60 KB [35.5]; 20 KB [13.3]; 30 KB [7.9] |
+| HTML gzipped: `/` with CSS; `/websocket/`; `/mcp/`; `/ai/` | 40 KB [14.3]; 60 KB [35.3]; 20 KB [12.9]; 30 KB [8.8] |
 | First search on `/ai/`, gzipped (P1) | 150 KB [629 KB] |
 | Fonts, all files; largest image on `/` | 160 KB [157.7 KB]; 120 KB [34 KB] |
 | `llms.txt` / `llms-ctx.txt` | 80 links, 25 KB [55, 16.6 KB] / 300 KB [230.5 KB] |
 | Social card | 1200x630 PNG under 200 KB [768 KB square]; unreferenced assets 0 [1, 643 KB] |
-| Page length at 1440 / 390 px, in screens | `/` 6.5 / 12 [8.1 / 17.2]; `/websocket/` 15 / 30 [84 / 151]; `/examples/` 7 / 10 [6 / 8.3]; `/ai/` 5 / 10 [4.1 / 8.7]; `/mcp/` 10 / 18 [19.6 / 33.6] |
+| Page length at 1440 / 390 px, in screens | `/` 6.5 / 12 [8.4 / 16.6]; `/websocket/` 15 / 30 [86.9 / 156.5]; `/examples/` 7 / 10 [6.2 / 8.0]; `/ai/` 5 / 10 [4.1 / 8.3]; `/mcp/` 10 / 18 [20.4 / 33.8] |
 
 Accessibility is WCAG 2.2 AA; §11 B probes it at 320, 390 and 1440 px, and with JS off;
 `check.py` keeps heading order, `alt`, labels, the skip link and contrast. Long pages get short
@@ -215,23 +211,22 @@ lacks or the tag is not the newest stable release.
 Numbers continue Revisions 3 to 5; a letter marks a split. An item is done when its check
 passes in `tools/check.py` on `_site/` and in §11 on the live site.
 
-### P1 "stunning": what §11 S and D5 to D9 judge (29 `FAIL` lines; P0 is empty)
+### P1 "stunning": what §11 S and D5 to D9 judge (19 `FAIL` lines; P0 is empty)
 
-Four PRs, in this order, one item each; these alone stand between the site and an LGTM (#30
-shipped in #18 and holds A8, both S5 lines and D9). Each PR adds its S lines to `check.py`,
-and leaves every line that was green, green.
+Three PRs, in this order, one item each; these alone stand between the site and an LGTM (#30
+shipped in #18 and holds A8, S5 and D9; #26 shipped in #20 and holds `S1` and D5). Each PR
+adds its S lines to `check.py`, leaves every green line green, and names a size or radius
+by its §6 token, never as a px literal.
 
 | Order | # | Item | Files | §11 lines it turns green |
 |---|---|---|---|---|
-| 1 | 26 | **One system on every page** (absorbs 17b). The scale, radii and measure of §6 as `--t-*` and `--r-*` tokens; every px literal for a size or radius replaced; card rows of 2, 3 or 4 that never orphan; h1 72 / 40 px. | `assets/site.css`; the `<style>` block and `style=` attributes of all six `src/*.html`; inline sizes emitted by `tools/build.py` and `tools/mcp.py`; `tools/check.py` | 10: `S1 <page> at 1440 px` and `S1 <page> at 390 px` for `/`, `/websocket/`, `/examples/`, `/ai/`, `/mcp/`. D5. |
-| 2 | 27 | **Every page opens on its object** (absorbs 12b). The same page start everywhere, then the `data-object` of §5: monitor, console, agent session (config and three calls, built from `mcp/schema.json`), first snippet, search box above the router. Entries on `/websocket/` and `/mcp/` are closed `<details>`; on `/` the beta files and the older ledger entries close. | Markup of `src/index.html`, `websocket.html`, `mcp.html`, `examples.html`, `ai.html`; entry templates in `tools/build.py` (`<article>`, about line 539) and `tools/mcp.py` (about line 299); dock layout in `assets/site.css`; `tools/check.py` | 10: `S2 <page> at 1440 px` and `S2 <page> at 390 px` for the five pages. Must keep `B / with JS off` (six stable files and hashes stay open) and `B /websocket/ with JS off` (each `summary` carries the `id`). D6. |
-| 3 | 28 | **The finish: pictures and motion** (absorbs 7). One more real capture on `/` beside its ledger entry (upstream `docs/images/gpu-status-red.png`, 194 KB, re-encoded like the hero) with a receipt; the generated social card; the two logo PNGs gone; the four motions of §6. | `assets/site.css` (one transition rule, two or three `@keyframes`); `src/index.html` (bar, second figure); `tools/build.py` (capture, card, `og:image` at about line 581); `tools/models.py`; `assets/*.png`; `tools/check.py` | 8: `S3 <page> eases` for the five pages, `S3 / pictures`, `S3 the social card`, `S3 / motion`. `S3 / with reduced motion` and `S3 site.css` are green now and must stay so, as must `S2 /` (length). |
-| 3, parallel | 29 | **A console that plays.** The replay and the conversation log of §9. | `src/websocket.html`; `src/replay.json` (new); `tools/build.py` (inline and validate the transcript); `tools/models.py` (its model); `tools/check.py` | 1: `S4 /websocket/#demo` (ops 0, 2, 6 and 7 in `#log`; "recorded" or "scripted" with the release tag; `#st` not "connected"). D8. |
+| 1, in progress | 27 | **Every page opens on its object** (absorbs 12b). The same page start everywhere, then the `data-object` of §5: monitor, console, agent session (config and three calls, built from `mcp/schema.json`), first snippet, search box above the router. Entries on `/websocket/` and `/mcp/` are closed `<details>`; on `/` the beta files and the older ledger entries close. | Markup of `src/index.html`, `websocket.html`, `mcp.html`, `examples.html`, `ai.html`; entry templates in `tools/build.py` (`<article>`, about line 539) and `tools/mcp.py` (about line 299); dock layout in `assets/site.css`; `tools/check.py` | 10: `S2 <page> at 1440 px` and `S2 <page> at 390 px` for the five pages. Must keep `B / with JS off` (six stable files and hashes stay open) and `B /websocket/ with JS off` (each `summary` carries the `id`). D6. |
+| 2 | 28 | **The finish: pictures and motion** (absorbs 7). One more real capture on `/` beside its ledger entry (upstream `docs/images/gpu-status-red.png`, 194 KB, re-encoded like the hero) with a receipt; the generated social card; the two logo PNGs gone; the four motions of §6. | `assets/site.css` (one transition rule, two or three `@keyframes`); `src/index.html` (bar, second figure); `tools/build.py` (capture, card, `og:image` at about line 581); `tools/models.py`; `assets/*.png`; `tools/check.py` | 8: `S3 <page> eases` for the five pages, `S3 / pictures`, `S3 the social card`, `S3 / motion`. `S3 / with reduced motion` and `S3 site.css` are green now and must stay so, as must `S2 /` (length). |
+| 2, parallel | 29 | **A console that plays.** The replay and the conversation log of §9. | `src/websocket.html`; `src/replay.json` (new); `tools/build.py` (inline and validate the transcript); `tools/models.py` (its model); `tools/check.py` | 1: `S4 /websocket/#demo` (ops 0, 2, 6 and 7 in `#log`; "recorded" or "scripted" with the release tag; `#st` not "connected"). D8. |
 
-**Conflicts.** #26 rewrites every page's `<style>` (including the px literals #18 just added
-to `src/ai.html`), so nothing runs beside it. #27 moves the markup #26 restyled and docks the
-console #29 fills, so it follows #26 and precedes #29; #28 adds a picture to the page whose
-length #27 sets. #28 and #29 may run in parallel: #29 owns `src/websocket.html`, #28 owns
+**Conflicts.** #27 moves the markup of every page and docks the console #29 fills, so nothing
+runs beside it and it precedes #29; #28 adds a picture to the page whose length #27 sets.
+#28 and #29 may run in parallel: #29 owns `src/websocket.html`, #28 owns
 `site.css` and `src/index.html` (the tally's pulse is a `site.css` class that #29 only
 toggles), and both only append to `build.py`, `models.py` and `check.py`; the second to merge
 rebases. Every other pair is serial.
@@ -260,10 +255,10 @@ contributor strip (equals `leaderboard.json`). 25 `/releases.xml`; a launch-spee
 The judge works on the **live site** only; nothing is taken from a build log, a PR or this
 document's brackets. Verdict: **LGTM** when the script prints no `FAIL` line, all three trials
 in C pass, at most one of D1 to D4 fails and at most one of D5, D6, D8 and D9 fails; otherwise
-**FAIL:** and the failed lines. Budget 10 minutes: the script ran in 1 min 41 s and 1 min 42 s (killed, and failed, at
-9 min); C's trials run in parallel in about five; D takes four. The script needs only `bash`,
-`curl`, `jq` and the Chromium at `~/.hermes/tools/chromium-1208/chrome-linux64/chrome`, and
-samples nothing at random: two runs against one deploy print the same lines.
+**FAIL:** and the failed lines (procedure: §12). Budget 10 minutes: the script runs in 1 min
+37 s to 1 min 42 s (killed, and failed, at 9 min); C takes about five, in parallel; D four. It
+needs only `bash`, `curl`, `jq` and the Chromium at `~/.hermes/tools/chromium-1208/chrome-linux64/chrome`,
+and samples nothing at random: two runs against one deploy print the same lines.
 
 ```bash
 cd "$(mktemp -d)"   # then extract the two blocks below from this file and run them
@@ -391,21 +386,9 @@ want "S5 /ai/ results" "/ai/ 1440 900 0 q=install%20on%20windows" '(select(.hits
 shoot home-1440 / 1440 900; shoot home-390 / 390 844; shoot examples-1440 /examples/ 1440 900; shoot mcp-390 /mcp/ 390 844; shoot console-1440 /websocket/ 1440 900 demo; shoot search-1440 /ai/ 1440 1400 q=install%20on%20windows
 ```
 
-**What changed from Revision 6's script** (an audit of S and D; A, B and S5 are as they were).
-*Entangled:* an `S1-2` line needed #26, #27 and #28 together; it is now `S1`, `S2` and
-`S3 … eases`, one item each. *Flaky:* the `/` key makes `/ai/` redraw, and the probe read a
-detached element as a `null` size; it skips those. *Unreachable or on a knife edge:*
-`/examples/` sat at its 6-screen limit and `/ai/` 0.4 under, so they get 7 / 10 and 5 / 10,
-and `/` 6.5 / 12; a 12 px receipt line failed the 40 em measure, which now reads body text
-only; D9 asked for five results in a 900 px frame that fits two, so its picture is 1400 px
-tall and it asks for three; a replay nobody recorded could pass only by saying "recorded",
-so "scripted" passes too. *Not worth their cost:* the mascot checks (no small mascot exists,
-and a 160 px robot would compete with the search box), the ban on any page `<style>` and
-the typed form (item 19). *Not for an eye:* D7 read CSS and is now the `S3 site.css` line;
-D5 and D6 no longer ask the judge to count sizes or measure bands, which S1 and S2 do.
-*Verified:* `--force-prefers-reduced-motion` switches the media query in this Chromium, in a
-frame too. The probe frames a local copy of the live page with `history.replaceState`
-neutralised (a `file:` frame may not rewrite its URL).
+**The script is Revision 7's, unchanged**; that revision gives its reasons ("What changed").
+The probe frames a local copy of the live page with `history.replaceState` neutralised (a
+`file:` frame may not rewrite its URL), and reads the 40 em measure from body text only.
 
 **C. Cold trials.** Each is one fresh sub-agent with a fetch tool, no repository and no prior
 context, three fetches per question; the judge checks the answer against the named source.
@@ -424,9 +407,9 @@ context, three fetches per question; the judge checks the answer against the nam
 
 **D. Judgement.** Each line is a yes/no question; a "no" fails it and the judge names the
 element at fault. D1 to D4 ask whether the site is honest, D5 to D9 whether it is stunning.
-Method for D5 to D9: open the named file in `shots/` (the live page at the stated size;
-downscale to 800 px wide if the harness caps image size) and answer from the picture and the
-named criteria, not from the S lines, which already count.
+Method for D5 to D9: open the named picture (the live page at the stated size, made readable
+by step 4 of §12) and answer from the picture and the named criteria, not from the S lines,
+which already count.
 
 1. On the first screen (`home-1440.png`), could `/` not be mistaken for a template: the real
    application readable, one headline figure with its receipt, one primary action?
@@ -450,7 +433,41 @@ named criteria, not from the S lines, which already count.
    are three or more results on screen, each with kind, title, breadcrumb and a marked
    snippet of two lines or fewer; and are the result count and a copy control visible?
 
-## 12. Non-goals
+## 12. Judge protocol
+
+You are the judge of https://obs-rust.com. Decide from the live site alone, by §11 of
+`DESIGN.md` on `main` of `obs-rust/obs-rust.github.io`. Edit nothing, fix nothing, and take no
+figure from a PR, a build log or this document. Stop at the first step that fails.
+
+1. **Run the script** from the root of an up-to-date checkout. `T` is a new, empty directory
+   given as a literal path in your scratch space (a harness may refuse `$(mktemp -d)`):
+   ```bash
+   D="$PWD/DESIGN.md"; T=/path/to/scratch/judge-1; mkdir -p "$T"; export GITHUB_TOKEN=${GITHUB_TOKEN:-$(gh auth token 2>/dev/null)}
+   (cd "$T" && awk '/^```html probe/{f="probe.html";next} /^```bash judge/{f="judge.sh";next} /^```$/{f=""} f{print > f}' "$D" \
+     && timeout 540 bash judge.sh > verdict.txt; echo "exit $?, $(grep -c '^FAIL' verdict.txt) FAIL"; cat verdict.txt; ls -l shots)
+   ```
+2. **Read it.** Pass: exit 0, no line starting `FAIL`, six pictures in `shots/`. If not, run
+   step 1 once more in `judge-2` (the probe caches per directory). A line counts when its
+   label, the text up to the first colon, prints in both runs; exit 124 or a missing picture
+   in both counts as `script did not finish`. If anything counts, skip steps 3 and 4.
+3. **Cold trials, §11 C.** Start the three at once, each a fresh sub-agent given only the
+   first paragraph of C and its own trial. If you cannot start sub-agents, run each yourself
+   with `curl` under the same fetch limit, answering only from the bodies you fetched. Check
+   each answer against its named source in `$T`. All must pass; a failure is `C1`, `C2`, `C3`.
+4. **Judgement, §11 D.** A harness may refuse a large image, so view copies (raise `-q:v` if
+   one is still refused; `-vf crop=720:450:<x>:<y>` shows small text at full size):
+   `mkdir "$T/small"; for f in "$T"/shots/*.png; do ffmpeg -v error -y -i "$f" -vf "scale='min(720,iw)':-1" -q:v 12 "$T/small/$(basename "$f" .png).jpg"; done`.
+   Open all six, then answer D1 to D4, D5, D6, D8 and D9, each yes or no, from the pictures
+   and, for D2 and D3, the page text. A "no" names the element at fault. Pass: at most one
+   "no" among D1 to D4 and at most one among D5, D6, D8 and D9.
+
+**Verdict.** Reply with one line and nothing else: `LGTM` if steps 2, 3 and 4 all passed,
+otherwise `FAIL: <reason>`, the failed labels in script order joined by "; " (the first six,
+then `+N more`), each D label with its fault: `FAIL: S2 /mcp/ at 390 px; S4 /websocket/#demo`
+or `FAIL: D6 feed cards on /ai/ outweigh the search box; D8 the frames show no JSON`. A "no"
+within step 4's allowance is not a failure and is not reported.
+
+## 13. Non-goals
 
 No framework, bundler, analytics, cookie banner or third-party embed. No server-side search,
 hosted MCP endpoint or embedding service. No hand-edited copy of upstream docs. No blog, no

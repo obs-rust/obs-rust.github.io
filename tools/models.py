@@ -76,6 +76,7 @@ class GhRelease(Theirs):
     name: str | None = None
     html_url: str
     published_at: str | None = None
+    prerelease: bool = False
     assets: list[GhAsset] = []
 
 
@@ -548,6 +549,25 @@ class Checksums:
 
 
 @dataclass(frozen=True, slots=True)
+class Channel:
+    """A download channel: the newest stable or the newest beta obs-studio-rust-v* release."""
+
+    name: str
+    note: str
+    rel: GhRelease
+    sums: Checksums
+
+
+@dataclass(frozen=True, slots=True)
+class Limit:
+    """A known limitation, quoted from the README; the build fails when the pattern stops matching."""
+
+    os: str
+    text: str
+    readme_pattern: str
+
+
+@dataclass(frozen=True, slots=True)
 class HeroImage:
     """The upstream main-window screenshot, re-encoded for the hero."""
 
@@ -581,6 +601,8 @@ class PageContext:
     ctx_kb: str
     ai_doc_list: str
     ai_router: str
+    release_line: str
+    limits: str
     build_date: str
     obs_sha: str
     obs_sha_short: str

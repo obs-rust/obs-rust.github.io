@@ -41,10 +41,13 @@ import corpus as corpusmod  # noqa: E402
 import mcp as mcpmod
 import sitedocs  # noqa: E402
 from models import (  # noqa: E402
+    Channel,
+    Limit,
     Checksums,
     HeroImage,
     DownloadGroup,
     DownloadOption,
+    GhAsset,
     Chunk,
     Conversion,
     CorpusFile,
@@ -110,7 +113,7 @@ def raw_bytes(b: bytes) -> bytes:
 
 
 # ---------------------------------------------------------------- stats
-def repo_stats(offline: bool) -> tuple[RepoStats, GhRelease | None]:
+def repo_stats(offline: bool) -> tuple[RepoStats, GhRelease | None, list[GhRelease]]:
     langs = cached("languages.json", offline, lambda: gh(f"repos/{REPO}/languages"), GhLanguages.model_validate_json)
     repo = cached("repo.json", offline, lambda: gh(f"repos/{REPO}"), GhRepo.model_validate_json)
     rels = cached("releases.json", offline, lambda: gh(f"repos/{REPO}/releases?per_page=20"),
@@ -123,7 +126,8 @@ def repo_stats(offline: bool) -> tuple[RepoStats, GhRelease | None]:
         return round(100 * langs.bytes_of(lang) / total, 1)
 
     r, c, x = pct("Rust"), pct("C"), pct("C++")
-    rel = next((x for x in rels if x.tag_name.startswith("obs-studio-rust-v")), rels[0] if rels else None)
+    ours = [x for x in rels if x.tag_name.startswith("obs-studio-rust-v")]
+    rel = ours[0] if ours else (rels[0] if rels else None)
     stats = RepoStats(
         rust_pct=r, c_pct=c, cpp_pct=x, other_pct=round(max(0.0, 100 - r - c - x), 1),
         rust_mb=f"{langs.bytes_of('Rust') / 1e6:.1f}", c_mb=f"{langs.bytes_of('C') / 1e6:.1f}",
@@ -133,7 +137,7 @@ def repo_stats(offline: bool) -> tuple[RepoStats, GhRelease | None]:
         conv_commit=conv.commit, conv_date=conv.date,
         stars=repo.stargazers_count, forks=repo.forks_count,
     )
-    return stats, rel
+    return stats, rel, rels
 
 
 def human_size(n: int) -> str:
@@ -183,27 +187,94 @@ def release_checksums(rel: GhRelease | None, offline: bool) -> Checksums | None:
     return cached(f"sha256sums-{rel.tag_name}.txt", offline, lambda: fetch(url, "*/*"), Checksums.parse)
 
 
-def render_downloads(rel: GhRelease | None, sums: Checksums | None) -> str:
-    if not rel:
-        return '<p>No release found. See <a href="https://github.com/obs-rust/obs-studio/releases">releases</a>.</p>'
-    if sums is None:
-        raise SystemExit(f"downloads: {rel.tag_name} has no SHA256SUMS asset")
+def channels(rels: list[GhRelease], offline: bool) -> list[Channel]:
+    """Newest stable and newest beta obs-studio-rust-v* releases; each must ship SHA256SUMS."""
+    ours = [x for x in rels if x.tag_name.startswith("obs-studio-rust-v")]
+    picks = [("Stable", "Recommended. The newest release that is not a prerelease.",
+              next((x for x in ours if not x.prerelease), None)),
+             ("Beta", "Newest build from master: the latest fixes, less testing.",
+              next((x for x in ours if x.prerelease), None))]
+    out: list[Channel] = []
+    for name, note, rel in picks:
+        if rel is None:
+            continue
+        sums = release_checksums(rel, offline)
+        if sums is None:
+            raise SystemExit(f"downloads: {rel.tag_name} has no SHA256SUMS asset")
+        out.append(Channel(name=name, note=note, rel=rel, sums=sums))
+    if not out:
+        raise SystemExit("downloads: no obs-studio-rust-v* release")
+    return out
+
+
+def channel_assets(ch: Channel, group: DownloadGroup) -> list[tuple[DownloadOption, GhAsset, str]]:
+    """The group's packages present in this release, each with its SHA-256; fails on a missing hash
+    and on an OS with no package at all."""
+    found: list[tuple[DownloadOption, GhAsset, str]] = []
+    for opt in group.options:
+        asset = next((x for x in ch.rel.assets if x.name.endswith(opt.suffix)), None)
+        if asset is None:
+            continue
+        digest = ch.sums.by_name.get(asset.name)
+        if digest is None:
+            raise SystemExit(f"downloads: {asset.name} has no line in {ch.rel.tag_name}'s SHA256SUMS")
+        found.append((opt, asset, digest))
+    if not found:
+        raise SystemExit(f"downloads: {ch.rel.tag_name} has no {group.os_name} package")
+    return found
+
+
+VERIFY = {"Windows": "Get-FileHash <file>", "macOS": "shasum -a 256 <file>", "Linux": "sha256sum <file>"}
+
+
+def render_downloads(chans: list[Channel]) -> str:
     out: list[str] = []
-    for group in DL_GROUPS:
-        items: list[str] = []
-        for opt in group.options:
-            asset = next((x for x in rel.assets if x.name.endswith(opt.suffix)), None)
-            if asset is None:
-                raise SystemExit(f"downloads: no asset in {rel.tag_name} ends with {opt.suffix!r}")
-            digest = sums.by_name.get(asset.name)
-            if digest is None:
-                raise SystemExit(f"downloads: {asset.name} has no SHA256SUMS line")
-            items.append(f'<li><a href="{esc(asset.browser_download_url)}">{esc(opt.label)}'
-                         f'<span>{human_size(asset.size)}</span></a>'
-                         f'<code class="sha" title="SHA-256 of {esc(asset.name)}">sha256 {digest}</code></li>')
-        out.append(f'<div class="plate card" data-os="{group.os_name.lower()}"><span class="tag">{esc(group.arch)}</span>'
-                   f'<div class="os">{group.os_name}</div><ul>{"".join(items)}</ul></div>')
+    for ch in chans:
+        cards: list[str] = []
+        for group in DL_GROUPS:
+            items = "".join(
+                f'<li><a href="{esc(asset.browser_download_url)}">{esc(opt.label)}'
+                f'<span>{human_size(asset.size)}</span></a>'
+                f'<code class="sha" title="SHA-256 of {esc(asset.name)}">{digest}</code></li>'
+                for opt, asset, digest in channel_assets(ch, group))
+            cards.append(f'<div class="plate card" data-os="{group.os_name.lower()}"><span class="tag">{esc(group.arch)}</span>'
+                         f'<div class="os">{group.os_name}</div><ul>{items}</ul>'
+                         f'<p class="verify">Verify: <code>{esc(VERIFY[group.os_name])}</code> must equal the SHA-256.</p></div>')
+        date = (ch.rel.published_at or "")[:10]
+        out.append(f'<div class="chan" id="{ch.name.lower()}"><h3><b>{ch.name}</b> <a href="{esc(ch.rel.html_url)}">'
+                   f'{esc(ch.rel.name or ch.rel.tag_name)}</a> <span>{date}</span></h3><p class="muted">{esc(ch.note)}</p>'
+                   f'<div class="dl">{"".join(cards)}</div></div>')
     return "".join(out)
+
+
+LIMITS: tuple[Limit, ...] = (
+    Limit("Windows", "Windows SmartScreen warns on the first start of the portable build: choose More info, then Run anyway.",
+          r"SmartScreen warns on the first start"),
+    Limit("macOS", "Packages are signed and notarized only when the project's release credentials are configured; "
+          "an unnotarized app is allowed once in System Settings → Privacy & Security → Open Anyway.",
+          r"signed and notarized when the project's release credentials are\s+configured"),
+    Limit("Linux", "The Flatpak bundle does not update itself and is not on Flathub: install the next release's bundle the same way.",
+          r"does not update itself yet"),
+    Limit("Linux", "The AppImage is tested on AlmaLinux 8, Ubuntu 22.04 and 24.04, Arch Linux and NixOS; the .deb targets Ubuntu 26.04.",
+          r"The AppImage is tested on AlmaLinux 8"),
+    Limit("All", "It installs beside upstream OBS and imports its settings once, on first start; later upstream changes are not "
+          "imported. Going back is safe: upstream's files are never changed.",
+          r"later upstream changes are\s+not imported again"),
+    Limit("Windows, macOS", "A new app identity, so the OS may ask for capture permissions again.",
+          r"the OS may\s+ask for capture permissions again"),
+)
+
+
+def render_limits(readme: str, obs_sha: str) -> str:
+    rows: list[str] = []
+    for lim in LIMITS:
+        m = re.search(lim.readme_pattern, readme)
+        if m is None:
+            raise SystemExit(f"limits: README no longer says {lim.readme_pattern!r}; update LIMITS")
+        line = readme.count("\n", 0, m.start()) + 1
+        rows.append(f'<li><b>{esc(lim.os)}</b><span>{esc(lim.text)}</span>'
+                    f'<a class="receipt" href="https://github.com/{REPO}/blob/{obs_sha}/README.md#L{line}">README.md:{line}</a></li>')
+    return "".join(rows)
 
 
 # ---------------------------------------------------------------- features ledger
@@ -609,7 +680,8 @@ def main() -> None:
     (out / "websocket").mkdir(parents=True)
     (out / "websocket" / "protocol.json").write_bytes(proto_bytes)
 
-    stats, rel = repo_stats(a.offline)
+    stats, rel, rels_all = repo_stats(a.offline)
+    chans = channels(rels_all, a.offline)
     ledger = parse_ledger((obs / "docs/features.md").read_text())
 
     # corpus
@@ -634,10 +706,9 @@ def main() -> None:
     mcp_md = mcpmod.corpus_markdown(surface, sessions)
     docs.append(make_doc("mcp", "mcp/reference.md", mcp_md, f"{SITE}/mcp/"))
     # site documents for agents (DESIGN.md P0 #2): install, choose an API, copy an example
-    sums = release_checksums(rel, a.offline)
     n_ro = sum(1 for t in surface.tools if t.annotations.readOnlyHint)
     docs.append(make_doc("site", "site/download.md", sitedocs.download_md(
-        rel, sums, DL_GROUPS, (obs / "README.md").read_text(), human_size), f"{SITE}/#download"))
+        chans, DL_GROUPS, (obs / "README.md").read_text(), human_size), f"{SITE}/#download"))
     docs.append(make_doc("site", "site/control.md", sitedocs.control_md(
         len(proto.requests), len(proto.events), len(proto.enums), len(surface.tools), n_ro), f"{SITE}/websocket/"))
     docs.append(make_doc("site", "site/examples.md", sitedocs.examples_md(
@@ -749,7 +820,10 @@ def main() -> None:
         release_name=esc(rel.name or rel.tag_name) if rel else "releases",
         release_url=esc(rel.html_url) if rel else f"https://github.com/{REPO}/releases",
         release_date=(rel.published_at or "")[:10] if rel else "",
-        downloads=render_downloads(rel, sums),
+        downloads=render_downloads(chans),
+        release_line=" · ".join(f'{c.name}: <a href="{esc(c.rel.html_url)}">{esc(c.rel.name or c.rel.tag_name)}</a>'
+                                for c in chans),
+        limits=render_limits((obs / "README.md").read_text(), obs_sha),
         feature_cards=render_feature_cards(ledger.features),
         n_features=len(ledger.features), n_fixed=len(ledger.fixed),
         n_requests=len(proto.requests), n_events=len(proto.events), n_enums=len(proto.enums),

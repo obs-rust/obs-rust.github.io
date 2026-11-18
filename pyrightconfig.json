@@ -1,0 +1,7 @@
+{
+  "include": ["tools"],
+  "exclude": ["tools/vendor", "**/__pycache__"],
+  "extraPaths": ["tools"],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "strict"
+}

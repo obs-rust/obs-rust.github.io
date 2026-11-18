@@ -48,6 +48,12 @@ jobs:
         run: uv run tools/build.py --obs-studio .obs-studio --out _site
       - name: Check site
         run: uv run tools/check.py _site
+      - name: Type check tools (basedpyright strict)
+        # pyrightconfig.json sets strict mode over tools/; the --with deps let it resolve imports.
+        run: >-
+          uv run --no-project --python 3.12
+          --with basedpyright==1.40.2 --with 'pydantic>=2.7' --with 'jsonschema>=4.22' --with types-jsonschema
+          basedpyright --level error
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

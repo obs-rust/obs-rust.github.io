@@ -165,6 +165,22 @@ def main() -> int:
             if x.kind == "prose" and x.chars > 2400 and "```" not in x.text and "\n|" not in x.text:
                 errs.append(f"corpus.json: prose chunk {x.id} is {x.chars} chars (> 2400)")
 
+    # hero is the real application, no invented scenes or animation loops (DESIGN.md P0 #3)
+    home = (site / "index.html").read_text()
+    for banned in ("Starting Soon", "BRB"):
+        if banned in home:
+            errs.append(f"index.html: invented scene name {banned!r} is back")
+    for page in site.rglob("*.html"):
+        if "requestAnimationFrame" in page.read_text():
+            errs.append(f"{page.relative_to(site)}: requestAnimationFrame in a shipped page")
+    hero = site / "assets/main-window.webp"
+    if not hero.is_file() or hero.stat().st_size > 120_000:
+        errs.append("assets/main-window.webp missing or over 120 KB")
+    # every download link carries a full SHA-256 (DESIGN.md P0 #5)
+    n_dl = home.count('class="sha"')
+    if n_dl == 0 or n_dl != len(re.findall(r'<li><a href="https://github.com/obs-rust/obs-studio/releases/download/', home)):
+        errs.append(f"index.html: {n_dl} SHA-256 lines do not match the download links")
+
     for e in errs:
         print("FAIL", e)
     print(f"check: {len(errs)} problem(s) in {site}")

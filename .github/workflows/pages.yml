@@ -40,6 +40,7 @@ jobs:
             /rust/obs-mcp/src/
             /docs/
             !/docs/images/
+            /docs/images/appimage-main-window.png
             !/docs/rust-port/native-graph/
       - uses: astral-sh/setup-uv@v6
       - name: Build site
@@ -52,7 +53,7 @@ jobs:
         # pyrightconfig.json sets strict mode over tools/; the --with deps let it resolve imports.
         run: >-
           uv run --no-project --python 3.12
-          --with basedpyright==1.40.2 --with 'pydantic>=2.7' --with 'jsonschema>=4.22' --with types-jsonschema
+          --with basedpyright==1.40.2 --with 'pydantic>=2.7' --with 'jsonschema>=4.22' --with types-jsonschema --with 'pillow>=11'
           basedpyright --level error
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

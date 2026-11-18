@@ -25,14 +25,15 @@
 .it .nm:hover{color:var(--rust-hi)}
 .it:target{background:linear-gradient(90deg,rgba(232,99,26,.08),transparent 60%);box-shadow:inset 3px 0 0 var(--rust);padding-left:14px}
 .it p{color:var(--fg2);max-width:80ch}
-.it h4{font:700 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:14px 0 6px}
-.cx{font-size:10px;color:var(--rust);letter-spacing:2px}
-.try{margin-left:auto;padding:5px 10px;border:1px solid var(--cu);color:var(--cu-hi);background:transparent;border-radius:3px;font:700 11px var(--mono);cursor:pointer}
+.it .nm{overflow-wrap:anywhere;min-width:0}
+.it h3{font:700 12px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:14px 0 6px}
+.cx{font-size:12px;color:var(--rust);letter-spacing:2px}
+.try{margin-left:auto;padding:5px 10px;min-height:26px;border:1px solid var(--cu);color:var(--cu-hi);background:transparent;border-radius:3px;font:700 12px var(--mono);cursor:pointer}
 .try:hover{background:var(--cu);color:#000}
-.ft{width:100%;border-collapse:collapse;font-size:14.5px}
+.ft{min-width:100%;border-collapse:collapse;font-size:14.5px}
 .ft td{padding:8px 10px;border-top:1px solid #26292c;vertical-align:top}
 .ft td:first-child{white-space:nowrap;width:1%}
-.ft td:first-child .tag{margin-left:6px;font-size:9px}
+.ft td:first-child .tag{margin-left:6px;font-size:12px}
 .ft .ty{font:500 12.5px var(--mono);color:var(--cu-hi);white-space:nowrap;width:1%}
 .restr{font:500 12px var(--mono);color:var(--dim);margin-top:3px}
 details>summary{cursor:pointer}
@@ -42,7 +43,7 @@ details>summary{cursor:pointer}
 
 /* console */
 .con{margin-top:36px;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.con h3{display:flex;align-items:center;gap:10px}
+.con .con-h{display:flex;align-items:center;gap:10px;font:700 18px var(--mono);text-transform:none;letter-spacing:0;margin:0}
 .con .st{font:600 12px var(--mono);padding:3px 8px;border-radius:3px;border:1px solid var(--edge2);color:var(--dim)}
 .con .st.ok{color:#000;background:var(--cu-hi);border-color:var(--cu-hi)}
 .con .st.err{color:#fff;background:#a32020;border-color:#a32020}
@@ -50,7 +51,7 @@ details>summary{cursor:pointer}
 .con textarea{min-height:200px;font-size:13px;resize:vertical}
 .log{background:#0a0b0c;border:1px solid var(--edge);border-radius:6px;padding:12px;height:330px;overflow:auto;font:500 12.5px/1.5 var(--mono);white-space:pre-wrap;word-break:break-word}
 .log .o{color:#ffb98c}.log .i{color:#9fe0c8}.log .e{color:#ff8080}.log .m{color:var(--dim)}
-.con label{font:600 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.con label{font:600 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 @media(max-width:900px){.con{grid-template-columns:minmax(0,1fr)}}
 .proto{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px;margin-top:20px}
 .proto .card{padding:16px 18px;gap:4px}
@@ -75,7 +76,7 @@ details>summary{cursor:pointer}
 
   <section class="plate con" id="console" style="padding-top:24px">
     <div>
-      <h3>Live console <span class="st" id="st">disconnected</span></h3>
+      <h2 class="con-h">Live console <span class="st" id="st">disconnected</span></h2>
       <p class="muted" style="font-size:15px;margin-top:6px">Connect straight to your own OBS: enable it under <b>Tools → WebSocket Server Settings</b>. Everything stays between this tab and your machine. The password only feeds the SHA-256 challenge and is never stored.</p>
       <div class="row"><input id="url" type="text" value="ws://127.0.0.1:4455" aria-label="WebSocket URL"><input id="pw" type="password" placeholder="password (optional)" aria-label="Password"></div>
       <div class="row"><button class="btn primary" id="connect">Connect</button><button class="btn ghost" id="send" disabled>Send ▸</button></div>

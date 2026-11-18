@@ -487,7 +487,7 @@ def fields_table(fields: list[WsField], kind: str) -> str:
         restr = f'<div class="restr">{esc(f.valueRestrictions)}</div>' if f.valueRestrictions else ""
         rows.append(f'<tr><td><code>{esc(f.valueName)}</code>{opt}</td><td class="ty">{esc(f.valueType)}</td>'
                     f'<td>{md_desc(f.valueDescription)}{restr}</td></tr>')
-    return f'<h4>{kind}</h4><table class="ft"><tbody>{"".join(rows)}</tbody></table>'
+    return f'<h3>{kind}</h3><div class="tw"><table class="ft"><tbody>{"".join(rows)}</tbody></table></div>'
 
 
 def example_value(value_type: str) -> JsonValue:
@@ -550,7 +550,7 @@ def render_ws_items(p: WsProtocol) -> tuple[str, str]:
             f'<article class="it" id="{nid}" data-kind="enum" data-cat="enums" data-search="{esc(nid.lower())}">'
             f'<header><a class="nm" href="#{nid}">{nid}</a><span class="tag haz">enum</span>'
             f'<span class="tag">{len(en.enumIdentifiers)} values</span></header>'
-            f'<table class="ft"><tbody>{rows}</tbody></table></article>')
+            f'<div class="tw"><table class="ft"><tbody>{rows}</tbody></table></div></article>')
     nav: list[str] = []
     for c in cats:
         reqs = [r.requestType for r in p.requests if r.category == c]
@@ -603,16 +603,16 @@ FOOTER = """<footer class="site"><div class="wrap">
 <div class="cols">
 <div><a class="brand" href="/"><img src="/assets/obs-rust-badge.svg" alt="" width="34" height="34"><span>OBS <em>Rust</em></span></a>
 <p class="muted" style="margin-top:12px;font-size:15px;max-width:40ch">An independent, hybrid Rust/C/C++ rewrite of OBS Studio. Judged by the work.</p></div>
-<div><h4>Project</h4><ul>
+<div><h2>Project</h2><ul>
 <li><a href="https://github.com/obs-rust/obs-studio">obs-studio</a></li>
 <li><a href="https://github.com/obs-rust/obs-studio/releases">Releases</a></li>
 <li><a href="https://github.com/obs-rust/obs-studio/blob/master/docs/features.md">Features ledger</a></li>
 <li><a href="https://github.com/obs-rust/constitution/blob/main/CONSTITUTION.md">Constitution</a></li></ul></div>
-<div><h4>Build</h4><ul>
+<div><h2>Build</h2><ul>
 <li><a href="/websocket/">WebSocket API</a></li><li><a href="/mcp/">MCP server</a></li><li><a href="/examples/">Examples</a></li>
 <li><a href="https://github.com/obs-rust/obs-studio/issues?q=is%3Aopen+label%3Aready">Ready issues</a></li>
 <li><a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/testing-policy.md">Testing policy</a></li></ul></div>
-<div><h4>Agents &amp; community</h4><ul>
+<div><h2>Agents &amp; community</h2><ul>
 <li><a href="/llms.txt">llms.txt</a></li><li><a href="/llms-full.txt">llms-full.txt</a></li>
 <li><a href="https://discord.gg/6MWWX4x9pf">Discord</a></li><li><a href="https://www.reddit.com/r/ObsRust/">r/ObsRust</a></li></ul></div>
 </div>
@@ -832,7 +832,7 @@ def main() -> None:
         ctx_kb=f"{ctx_kb:.0f}",
         ai_router=sitedocs.router_html(router),
         ai_doc_list="".join(
-            f"<h4>{esc(groups.get(g, g))}</h4>" + "".join(
+            f"<h3>{esc(groups.get(g, g))}</h3>" + "".join(
                 f'<a href="{d.site_url}" title="{esc(d.path)}">{esc(d.title)}</a>'
                 for d in docs if d.group == g) for g in groups),
         build_date=f"{now:%Y-%m-%d}", obs_sha=obs_sha, obs_sha_short=obs_sha[:9],

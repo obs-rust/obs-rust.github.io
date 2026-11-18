@@ -230,7 +230,7 @@ def rows_html(rows: list[FieldRow]) -> str:
             tags += f'<span class="tag">default {esc(json.dumps(r.default))}</span>'
         out.append(f'<tr><td><code>{esc(r.name)}</code>{tags}</td><td class="ty">{esc(r.type)}</td>'
                    f'<td>{esc(r.description)}</td></tr>')
-    return f'<table class="ft"><tbody>{"".join(out)}</tbody></table>'
+    return f'<div class="tw"><table class="ft"><tbody>{"".join(out)}</tbody></table></div>'
 
 
 def _placeholder_value(json_type: JsonValue) -> JsonValue:

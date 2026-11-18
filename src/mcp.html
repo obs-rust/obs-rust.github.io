@@ -11,7 +11,7 @@
 .cfg{margin-top:20px}
 .cfg pre{font-size:13px}
 .hero-tx{padding:16px}
-.hero-tx h5{font:700 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.hero-tx .txh{font:700 12px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
 @media(max-width:940px){.mh{grid-template-columns:minmax(0,1fr)}}
 .modes,.cols,.reqs{display:grid;gap:14px;margin-top:22px}
 .modes{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -52,18 +52,19 @@
 .grp>h3{font:800 30px var(--stencil);color:var(--fg)}
 .tool{padding:18px 0;border-bottom:1px solid var(--edge);scroll-margin-top:130px}
 .tool.hide{display:none}
+.tool header a.tag{min-height:24px;display:inline-flex;align-items:center}
 .tool header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
 .tool .nm{font:700 19px var(--mono);color:var(--fg)}
 .tool:target{box-shadow:inset 3px 0 0 var(--rust);padding-left:14px;background:linear-gradient(90deg,rgba(232,99,26,.08),transparent 60%)}
 .tool p{color:var(--fg2);max-width:80ch}
 .tool .hints{font:500 12px var(--mono);color:var(--dim)}
-.tool h4{font:700 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:12px 0 4px}
+.tool h4{font:700 12px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:12px 0 4px}
 .tool .none{font-size:14px}
 .tool details{margin-top:8px}.tool details summary{font:600 12px var(--mono);color:var(--dim);cursor:pointer}
-.ft{width:100%;border-collapse:collapse;font-size:14.5px}
+.ft{min-width:100%;border-collapse:collapse;font-size:14.5px}
 .ft td{padding:7px 10px;border-top:1px solid #26292c;vertical-align:top}
 .ft td:first-child{white-space:nowrap;width:1%}
-.ft td:first-child .tag{margin-left:6px;font-size:9px}
+.ft td:first-child .tag{margin-left:6px;font-size:12px}
 .ft .ty{font:500 12.5px var(--mono);color:var(--cu-hi);width:1%;white-space:nowrap}
 @media(max-width:900px){.ref{grid-template-columns:minmax(0,1fr)}.rnav{display:none}.ft .ty{white-space:normal}}
 .files{width:100%;border-collapse:collapse;font-size:15px;margin-top:14px}
@@ -95,7 +96,7 @@ claude mcp add obs -- "$PWD/mcp" --mcp</pre>
       </div>
     </div>
     <div class="plate hero-tx">
-      <h5>An agent session · schema-validated example</h5>
+      <h2 class="txh">An agent session · schema-validated example</h2>
       {{mcp_hero_tx}}
     </div>
   </div>
@@ -172,7 +173,7 @@ claude mcp add obs -- "$PWD/mcp" --mcp</pre>
         {{mcp_ref}}
         <section class="grp" id="resources"><h3>Resources</h3><p class="muted">Read state without a tool call: <code>resources/list</code>, then <code>resources/read</code>.</p>{{mcp_resources}}</section>
         <section class="grp" id="files"><h3>Machine-readable</h3>
-          <table class="files"><tbody>
+          <div class="tw"><table class="files"><tbody>
             <tr><td><a href="/mcp/schema.json">/mcp/schema.json</a></td><td>Everything: server info, tools (a pre-fetched <code>tools/list</code>), resources and the ToolError schema · {{schema_kb}} KB</td></tr>
             <tr><td><a href="/mcp/tools.json">/mcp/tools.json</a></td><td>Exactly the <code>tools/list</code> result shape</td></tr>
             <tr><td><a href="/mcp/resources.json">/mcp/resources.json</a></td><td>Exactly the <code>resources/list</code> result shape</td></tr>
@@ -180,7 +181,7 @@ claude mcp add obs -- "$PWD/mcp" --mcp</pre>
             <tr><td><a href="/mcp/index.md">/mcp/index.md</a></td><td>This page as markdown, also in <a href="/llms.txt">llms.txt</a> and the <a href="/ai/">AI corpus</a></td></tr>
             <tr><td><a href="/mcp/server.json">/mcp/server.json</a></td><td>MCP registry manifest (2025-12-11 schema, validated at build). Not yet submitted: the registry needs an installable package, and the server is built from source today.</td></tr>
             <tr><td><a href="/mcp/mcp.json">/mcp/mcp.json</a></td><td>The repository's <code>.mcp.json</code>, verbatim</td></tr>
-          </tbody></table>
+          </tbody></table></div>
         </section>
       </div>
     </div>

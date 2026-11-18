@@ -18,7 +18,7 @@
 .pane .dep{font:500 12.5px var(--mono);color:var(--dim);padding:8px 0}
 .libs{width:100%;border-collapse:collapse;font-size:15.5px;margin-top:10px}
 .libs td,.libs th{padding:10px 12px;border-bottom:1px solid var(--edge);text-align:left}
-.libs th{font:700 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.libs th{font:700 12px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
 @media(max-width:900px){.ex{grid-template-columns:minmax(0,1fr)}.toc{display:none}}
 </style>
 </head>
@@ -194,14 +194,14 @@ printf <span class="s">'%s\n'</span> <span class="s">'{"jsonrpc":"2.0","id":1,"m
 <div class="blk" id="libs">
   <span class="eyebrow">08</span><h2>Client <em>libraries</em></h2>
   <p>Every v5 client works. A few well-maintained ones:</p>
-  <table class="libs"><thead><tr><th>Language</th><th>Library</th><th>Install</th></tr></thead><tbody>
+  <div class="tw"><table class="libs"><thead><tr><th>Language</th><th>Library</th><th>Install</th></tr></thead><tbody>
     <tr><td>Rust</td><td><a href="https://github.com/dnaka91/obws">obws</a></td><td><code>cargo add obws</code></td></tr>
     <tr><td>JavaScript / TS</td><td><a href="https://github.com/obs-websocket-community-projects/obs-websocket-js">obs-websocket-js</a></td><td><code>npm i obs-websocket-js</code></td></tr>
     <tr><td>Python</td><td><a href="https://github.com/aatikturk/obsws-python">obsws-python</a></td><td><code>uv add obsws-python</code></td></tr>
     <tr><td>Python (async)</td><td><a href="https://github.com/IRLToolkit/simpleobsws">simpleobsws</a></td><td><code>uv add simpleobsws</code></td></tr>
     <tr><td>Go</td><td><a href="https://github.com/andreykaipov/goobs">goobs</a></td><td><code>go get github.com/andreykaipov/goobs</code></td></tr>
     <tr><td>C# / .NET</td><td><a href="https://github.com/BarRaider/obs-websocket-dotnet">obs-websocket-dotnet</a></td><td><code>dotnet add package obs-websocket-dotnet</code></td></tr>
-  </tbody></table>
+  </tbody></table></div>
   <p class="muted" style="font-size:15px;margin-top:14px">Upstream's full list is in the <a href="https://github.com/obsproject/obs-websocket#language-apis">obs-websocket README</a>.</p>
 </div>
     </div>

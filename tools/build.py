@@ -48,6 +48,7 @@ from models import (  # noqa: E402
     DownloadGroup,
     DownloadOption,
     GhAsset,
+    GhCommitRef,
     Chunk,
     Conversion,
     CorpusFile,
@@ -118,8 +119,11 @@ def repo_stats(offline: bool) -> tuple[RepoStats, GhRelease | None, list[GhRelea
     repo = cached("repo.json", offline, lambda: gh(f"repos/{REPO}"), GhRepo.model_validate_json)
     rels = cached("releases.json", offline, lambda: gh(f"repos/{REPO}/releases?per_page=20"),
                   GhReleases.model_validate_json).root
+    # pin the figure: resolve the leaderboard branch to a commit, then read conversion.json at that commit
+    lb = cached("leaderboard-commit.json", offline, lambda: gh(f"repos/{REPO}/commits/leaderboard"),
+                GhCommitRef.model_validate_json)
     conv = cached("conversion.json", offline, lambda: fetch(
-        f"https://raw.githubusercontent.com/{REPO}/leaderboard/conversion.json", "*/*"), Conversion.model_validate_json)
+        f"https://raw.githubusercontent.com/{REPO}/{lb.sha}/conversion.json", "*/*"), Conversion.model_validate_json)
     total = langs.total() or 1
 
     def pct(lang: str) -> float:
@@ -134,7 +138,7 @@ def repo_stats(offline: bool) -> tuple[RepoStats, GhRelease | None, list[GhRelea
         cpp_mb=f"{langs.bytes_of('C++') / 1e6:.1f}",
         libobs_pct=f"{conv.libobs.all.percent:.1f}",
         app_pct=f"{conv.app.percent:.1f}",
-        conv_commit=conv.commit, conv_date=conv.date,
+        conv_commit=conv.commit, conv_date=conv.date, conv_blob_sha=lb.sha,
         stars=repo.stargazers_count, forks=repo.forks_count,
     )
     return stats, rel, rels
@@ -751,7 +755,7 @@ def main() -> None:
               "mcp": "MCP server (agent control)"}
     title = "# OBS Studio Rust (obs-rust)"
     blurb = ("> obs-studio-rust is an independent, hybrid Rust/C/C++ rewrite of OBS Studio that keeps the libobs C "
-             "ABI, the obs-websocket v5 protocol and the plugin/scripting APIs compatible. It ships beta builds for "
+             "ABI, the obs-websocket v5 protocol and the plugin/scripting APIs compatible. It ships stable and beta builds for "
              f"Windows, macOS and Linux, and a local MCP server for agents. Source: https://github.com/{REPO}.")
     full = [title, "", blurb, ""]
     for d in docs:
@@ -767,13 +771,15 @@ def main() -> None:
     missing_core = [c for c in core if c not in by_path]
     if missing_core:
         raise SystemExit(f"llms-ctx: core docs missing: {missing_core}")
-    releases_url = rel.html_url if rel else f"https://github.com/{REPO}/releases"
-    latest_tag = rel.tag_name if rel else "none"
+    latest_tag = "; ".join(f"{c.name.lower()} {c.rel.tag_name}" for c in chans)
     ctx_txt = [title, "", blurb, "",
                f"Core context bundle, generated {now:%Y-%m-%d} from obs-studio@{obs_sha[:9]}. "
                f"Everything else: {SITE}/llms.txt (index) and {SITE}/llms-full.txt (all docs).", "",
-               "## Download", f"Latest release: {latest_tag} ({releases_url}).",
-               "Assets: " + ", ".join(x.name for x in (rel.assets if rel else [])), ""]
+               "## Download", f"Releases: {latest_tag}. Install the stable release unless you need a fix that is "
+               f"only in the beta. Every file with its SHA-256: {SITE}/ai/docs/site-download.md", ""]
+    for c in chans:
+        ctx_txt += [f"{c.name} ({c.rel.tag_name}, {c.rel.html_url}): " + ", ".join(
+            x.name for x in c.rel.assets if x.name.startswith("OBS-Studio-Rust-") and "symbols" not in x.name), ""]
     for c in core:
         d = by_path[c]
         ctx_txt += [f"\n\n<!-- ===== {d.path} | {d.source} ===== -->\n", d.text.strip()]
@@ -791,7 +797,7 @@ def main() -> None:
              feed("protocol.json: obs-websocket v5 spec", "/websocket/protocol.json")]
     header = [title, "", blurb, "",
               f"Generated {now:%Y-%m-%d} from obs-studio@{obs_sha[:9]} and obs-websocket@{ws_sha[:9]}. "
-              f"Latest release: {latest_tag}. corpus.json has schema_version "
+              f"Releases: {latest_tag}. corpus.json has schema_version "
               f"{corpusmod.SCHEMA_VERSION}, {len(chunks)} chunks, and is also split per group under /ai/corpus/<group>.jsonl.", ""]
     extra = {
         "Control OBS": [
@@ -821,6 +827,7 @@ def main() -> None:
         release_url=esc(rel.html_url) if rel else f"https://github.com/{REPO}/releases",
         release_date=(rel.published_at or "")[:10] if rel else "",
         downloads=render_downloads(chans),
+        cta_version=esc(chans[0].rel.tag_name.removeprefix("obs-studio-rust-")),
         release_line=" · ".join(f'{c.name}: <a href="{esc(c.rel.html_url)}">{esc(c.rel.name or c.rel.tag_name)}</a>'
                                 for c in chans),
         limits=render_limits((obs / "README.md").read_text(), obs_sha),

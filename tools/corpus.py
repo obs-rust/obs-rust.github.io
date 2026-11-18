@@ -96,6 +96,25 @@ def _sections(text: str, rst: bool = False) -> list[tuple[list[str], str, str]]:
     return out
 
 
+_MD_IMAGE_LINK = re.compile(r"\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)")
+_MD_IMAGE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+_HTML_TAG = re.compile(r"</?(?:p|img|div|picture|source|br|a|sub|sup|span|center|kbd|details|summary)\b[^>]*>", re.I)
+
+
+def strip_markup(text: str) -> str:
+    """Drop badges, images and HTML tags from prose outside code fences; keep the words."""
+    out: list[str] = []
+    for i, part in enumerate(re.split(r"(```.*?```)", text, flags=re.S)):
+        if i % 2:
+            out.append(part)
+            continue
+        part = _MD_IMAGE_LINK.sub("", part)
+        part = _MD_IMAGE.sub("", part)
+        part = _HTML_TAG.sub("", part)
+        out.append(re.sub(r"\n{3,}", "\n\n", part))
+    return "".join(out)
+
+
 def anchored_url(doc: Doc, anchor: str, site: str) -> str:
     """Absolute URL of a prose section: the GitHub source pinned to the commit when the doc lives
     there, else the doc's page on this site; always with a fragment."""
@@ -148,7 +167,7 @@ def _split_long(block: str) -> list[str]:
 
 
 def prose_chunks(doc: Doc, title: str, site: str = "https://obs-rust.com") -> list[Chunk]:
-    secs = _sections(doc.text, rst=doc.path.endswith(".rst"))
+    secs = _sections(strip_markup(doc.text), rst=doc.path.endswith(".rst"))
     # merge tiny sections into the previous one (sibling or parent)
     merged: list[tuple[list[str], str, str]] = []
     for path, body, anc in secs:

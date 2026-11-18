@@ -71,6 +71,12 @@ class GhAsset(Theirs):
     size: int
 
 
+class GhCommitRef(Theirs):
+    """GET /repos/{repo}/commits/{ref}: only the resolved SHA is used."""
+
+    sha: str
+
+
 class GhRelease(Theirs):
     tag_name: str
     name: str | None = None
@@ -483,6 +489,7 @@ class RepoStats:
     libobs_pct: str
     app_pct: str
     conv_commit: str
+    conv_blob_sha: str
     conv_date: str
     stars: int
     forks: int
@@ -601,6 +608,7 @@ class PageContext:
     ctx_kb: str
     ai_doc_list: str
     ai_router: str
+    cta_version: str
     release_line: str
     limits: str
     build_date: str

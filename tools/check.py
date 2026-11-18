@@ -31,6 +31,12 @@ BUDGET_KB = {"llms-ctx.txt": 300, "assets/fonts": 160, "index.html": 120}
 DIGIT_OK = {"v5", "10m", "10-minute", "c++", "404", "sha256sums"}
 
 
+# DESIGN.md §6: the type scale and radii, as tokens in site.css (--t-*, --r-*); pages name them, never a literal.
+SCALE = (12, 13, 15, 17, 19, 22, 30, 40, 52, 72, 96)
+RADII = {"r-ctl": "4px", "r-plate": "6px", "r-light": "50%"}
+SIZED_UNIT = re.compile(r"(?<![\w-])\d*\.?\d+(?:px|em|rem|vw|vh|ch|%)")
+
+
 LOAD_RELS = {"stylesheet", "preload", "icon", "modulepreload", "preconnect"}
 
 
@@ -222,6 +228,8 @@ def main() -> int:
                 errs.append(f"{rel}: a <table> outside a scroll wrapper (.tw)")
                 break
 
+    errs.extend(check_one_system(site))
+
     # agent router and manifest (DESIGN.md P0 #2)
     llms_text = (site / "llms.txt").read_text()
     router = re.findall(r"^- ([^:\n]+): \[(/[^\]]+)\]\(https://obs-rust\.com(/[^)]+)\) \((\d+) bytes\)$",
@@ -254,6 +262,38 @@ def main() -> int:
         print("FAIL", e)
     print(f"check: {len(errs)} problem(s) in {site}")
     return 1 if errs else 0
+
+
+def check_one_system(site: Path) -> list[str]:
+    """S1 (DESIGN.md §6, backlog #26): one type scale, one set of radii, one measure, as tokens."""
+    errs: list[str] = []
+    css = (site / "assets/site.css").read_text()
+    tokens = {int(a): int(b) for a, b in re.findall(r"--t-(\d+):\s*(\d+)px", css)}
+    if set(tokens) != set(SCALE) or any(a != b for a, b in tokens.items()):
+        errs.append(f"site.css: --t-* tokens {sorted(tokens.items())} are not the scale {list(SCALE)}")
+    for name, value in RADII.items():
+        if not re.search(rf"--{name}:\s*{re.escape(value)}[;}}]", css):
+            errs.append(f"site.css: no --{name}:{value} token")
+    if not re.search(r"--measure:\s*40em", css) or not re.search(r"(?:^|})\s*p,\s*li\{max-width:var\(--measure\)", css, re.M):
+        errs.append("site.css: body text is not held to --measure (40em) by a p,li rule")
+    sources = [("assets/site.css", css)]
+    for page in sorted(site.rglob("*.html")):
+        rel = str(page.relative_to(site))
+        text = re.sub(r"<script.*?</script>", "", page.read_text(), flags=re.S)
+        sources += [(rel, m) for m in re.findall(r"<style>(.*?)</style>", text, re.S)]
+        sources += [(f"{rel} style=", m) for m in re.findall(r'\sstyle="([^"]*)"', text)]
+        if rel != "404.html" and re.search(r"(?:^|[},\s])h1[^{}]*\{[^}]*font", "".join(re.findall(r"<style>(.*?)</style>", text, re.S))):
+            errs.append(f"{rel}: the page restyles h1; h1 is one rule in site.css")
+    for rel, src in sources:
+        for m in re.finditer(r"(?<![\w-])font(?:-size)?\s*:\s*([^;}\"]+)", src):
+            value = re.sub(r"/\s*\S+", "", m[1])  # drop the line-height of a font shorthand
+            if SIZED_UNIT.search(value) or ("var(--t-" not in value and value.strip() != "inherit"):
+                errs.append(f"{rel}: font size is not a --t-* token: {m[0].strip()!r}")
+        for m in re.finditer(r"border(?:-(?:top|bottom)-(?:left|right))?-radius\s*:\s*([^;}\"]+)", src):
+            parts = re.findall(r"var\([^)]*\)|\S+", m[1].strip())
+            if any(part != "0" and not part.startswith("var(--r-") for part in parts):
+                errs.append(f"{rel}: radius is not a --r-* token: {m[0].strip()!r}")
+    return errs
 
 
 if __name__ == "__main__":

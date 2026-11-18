@@ -20,8 +20,10 @@ Every JSON input is parsed into a typed model from tools/models.py at the bounda
 from __future__ import annotations
 
 import argparse
+import base64
 import dataclasses
 import datetime as dt
+import hashlib
 import html
 import json
 import os
@@ -40,6 +42,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import corpus as corpusmod  # noqa: E402
 import mcp as mcpmod
 import sitedocs  # noqa: E402
+from models import (ReplayFile, ReplayInline, ReplayPage, ReplayRow, WsEventMessage, WsHello,  # noqa: E402
+                    WsIdentified, WsIdentify, WsResponseMessage)
 from models import (  # noqa: E402
     Channel,
     Limit,
@@ -614,6 +618,101 @@ def example_message(r: WsRequest) -> str:
     return json.dumps(msg.model_dump(mode="json", exclude_none=True), indent=2)
 
 
+# ---------------------------------------------------------------- console replay (DESIGN.md §9)
+def ws_auth(password: str, salt: str, challenge: str) -> str:
+    """obs-websocket v5: base64(sha256(base64(sha256(password + salt)) + challenge))."""
+    def b64sha(s: str) -> str:
+        return base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
+    return b64sha(b64sha(password + salt) + challenge)
+
+
+def replay_problems(rf: ReplayFile, p: WsProtocol) -> list[str]:
+    """Every way the transcript disagrees with protocol.json or with itself; empty when it is consistent."""
+    errs: list[str] = []
+    enums = {e.enumType: {str(i.enumIdentifier): i.enumValue for i in e.enumIdentifiers} for e in p.enums}
+    opcodes = {v for v in enums.get("WebSocketOpCode", {}).values()}
+    statuses = {v for v in enums.get("RequestStatus", {}).values()}
+    bits = {k: int(m.group(1)) for k, v in enums.get("EventSubscription", {}).items()
+            if (m := re.fullmatch(r"\(1 << (\d+)\)", str(v)))}
+    reqs = {r.requestType: r for r in p.requests}
+    evs = {e.eventType: e for e in p.events}
+
+    def unknown(where: str, data: dict[str, JsonValue] | None, fields: list[WsField]) -> None:
+        names = {f.valueName.split(".")[0] for f in fields}
+        errs.extend(f"{where}: field {k!r} is not in protocol.json" for k in (data or {}) if k not in names)
+
+    hello: WsHello | None = None
+    subscribed = 0
+    pending: dict[str, str] = {}
+    for n, fr in enumerate(rf.frames, 1):
+        m, where = fr.message, f"replay frame {n} (op {fr.message.op})"
+        if m.op not in opcodes:
+            errs.append(f"{where}: op is not a WebSocketOpCode")
+        if n <= 3 and m.op != n - 1:
+            errs.append(f"{where}: the session must open Hello, Identify, Identified")
+        match m:
+            case WsHello():
+                hello = m
+            case WsIdentify():
+                subscribed = m.d.eventSubscriptions if m.d.eventSubscriptions is not None else 0
+                auth = hello.d.authentication if hello else None
+                if auth is None or m.d.authentication != ws_auth(rf.password, auth.salt, auth.challenge):
+                    errs.append(f"{where}: authentication is not computed from the password, salt and challenge")
+            case WsIdentified():
+                pass
+            case WsRequestMessage():
+                r = reqs.get(m.d.requestType)
+                if r is None:
+                    errs.append(f"{where}: requestType {m.d.requestType!r} is not in protocol.json")
+                else:
+                    unknown(where, m.d.requestData, r.requestFields)
+                if m.d.requestId in pending:
+                    errs.append(f"{where}: requestId {m.d.requestId!r} is already pending")
+                pending[m.d.requestId] = m.d.requestType
+            case WsResponseMessage():
+                r = reqs.get(m.d.requestType)
+                if r is None:
+                    errs.append(f"{where}: requestType {m.d.requestType!r} is not in protocol.json")
+                else:
+                    unknown(where, m.d.responseData, r.responseFields)
+                if pending.pop(m.d.requestId, None) != m.d.requestType:
+                    errs.append(f"{where}: answers no pending {m.d.requestType} with requestId {m.d.requestId!r}")
+                st = m.d.requestStatus
+                if st.code not in statuses or st.result != (st.code == 100):
+                    errs.append(f"{where}: requestStatus {st.code} is not a RequestStatus or disagrees with result")
+            case WsEventMessage():
+                e = evs.get(m.d.eventType)
+                if e is None:
+                    errs.append(f"{where}: eventType {m.d.eventType!r} is not in protocol.json")
+                    continue
+                unknown(where, m.d.eventData, e.dataFields)
+                bit = bits.get(e.eventSubscription)
+                if bit is None or m.d.eventIntent != 1 << bit or not subscribed & (1 << bit):
+                    errs.append(f"{where}: eventIntent is not the {e.eventSubscription} bit the client subscribed to")
+    if pending:
+        errs.append(f"replay: requests without a response: {sorted(pending)}")
+    return errs
+
+
+def replay_page(path: Path, p: WsProtocol, chans: list[Channel]) -> ReplayPage:
+    """Validate src/replay.json against protocol.json and inline it, labelled with the newest stable tag."""
+    rf = ReplayFile.model_validate_json(path.read_bytes())
+    errs = replay_problems(rf, p)
+    if errs:
+        raise SystemExit("replay.json:\n  " + "\n  ".join(errs))
+    tag = next((c.rel.tag_name for c in chans if c.name == "Stable"), None)
+    if tag is None:
+        raise SystemExit("replay: no stable obs-studio-rust-v* release to name")
+    ops = {str(i.enumValue): i.enumIdentifier for e in p.enums if e.enumType == "WebSocketOpCode"
+           for i in e.enumIdentifiers}
+    rows = [ReplayRow(op=f.message.op, name=ops[str(f.message.op)],
+                      dir="client → server" if f.message.op in (1, 3, 6, 8) else "server → client",
+                      note=f.note, message=f.message) for f in rf.frames]
+    inline = ReplayInline(tag=tag, password=rf.password, ops=ops, rows=rows)
+    text = json.dumps(inline.model_dump(mode="json", exclude_unset=True), ensure_ascii=False, separators=(",", ":"))
+    return ReplayPage(replay_json=text.replace("<", "\\u003c"), replay_tag=esc(tag))
+
+
 def one_line(s: str, limit: int = 140) -> str:
     """The first sentence of a description as plain text, for an entry's summary line."""
     t = re.sub(r"`([^`]+)`", r"\1", s).split("\n", 1)[0].strip()
@@ -925,6 +1024,7 @@ def main() -> None:
             f"- [Examples]({SITE}/examples/): Rust, Python, JS and raw-socket clients, batch requests, scripts, plugins"],
     }
     ws_items, ws_nav = render_ws_items(proto)
+    replay = replay_page(ROOT / "src" / "replay.json", proto, chans)
     mstats = mcpmod.write_artifacts(out, surface, sessions, obs_sha, now.isoformat(timespec="seconds"),
                                     ROOT / "tools" / "vendor")
     (out / "mcp" / "index.md").write_text(
@@ -960,7 +1060,7 @@ def main() -> None:
                 for d in docs if d.group == g) for g in groups),
         build_date=f"{now:%Y-%m-%d}", obs_sha=obs_sha, obs_sha_short=obs_sha[:9],
         ws_sha=ws_sha, ws_sha_short=ws_sha[:9],
-        ws_items=ws_items, ws_nav=ws_nav,
+        ws_items=ws_items, ws_nav=ws_nav, replay=replay,
         mcp_protocol=surface.protocol, mcp_ref=mref, mcp_ref_nav=mnav,
         mcp_sessions=mcpmod.render_sessions(sessions), mcp_hero_tx=hero,
         mcp_json_pretty=esc(json.dumps(surface.mcp_json.model_dump(mode="json", exclude_none=True),

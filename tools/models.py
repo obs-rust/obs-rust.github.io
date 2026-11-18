@@ -167,6 +167,117 @@ class WsRequestMessage(Ours):
     d: WsRequestPayload
 
 
+# ---------------------------------------------------------------- console replay (src/replay.json, DESIGN.md §9)
+# The six message shapes of obs-websocket v5 (protocol.md, "Message Types"); build.py checks names against protocol.json.
+class WsAuthChallenge(Ours):
+    challenge: str
+    salt: str
+
+
+class WsHelloData(Ours):
+    obsStudioVersion: str
+    obsWebSocketVersion: str
+    rpcVersion: int
+    authentication: WsAuthChallenge | None = None
+
+
+class WsHello(Ours):
+    op: Literal[0]
+    d: WsHelloData
+
+
+class WsIdentifyData(Ours):
+    rpcVersion: int
+    authentication: str | None = None
+    eventSubscriptions: int | None = None
+
+
+class WsIdentify(Ours):
+    op: Literal[1]
+    d: WsIdentifyData
+
+
+class WsIdentifiedData(Ours):
+    negotiatedRpcVersion: int
+
+
+class WsIdentified(Ours):
+    op: Literal[2]
+    d: WsIdentifiedData
+
+
+class WsEventData(Ours):
+    eventType: str
+    eventIntent: int
+    eventData: dict[str, JsonValue] | None = None
+
+
+class WsEventMessage(Ours):
+    op: Literal[5]
+    d: WsEventData
+
+
+class WsRequestStatus(Ours):
+    result: bool
+    code: int
+    comment: str | None = None
+
+
+class WsResponseData(Ours):
+    requestType: str
+    requestId: str
+    requestStatus: WsRequestStatus
+    responseData: dict[str, JsonValue] | None = None
+
+
+class WsResponseMessage(Ours):
+    op: Literal[7]
+    d: WsResponseData
+
+
+type WsMessage = WsHello | WsIdentify | WsIdentified | WsEventMessage | WsRequestMessage | WsResponseMessage
+
+
+class ReplayFrame(Ours):
+    note: str
+    message: WsMessage = Field(discriminator="op")
+
+
+class ReplayFile(Ours):
+    """src/replay.json: a scripted session; ``password`` lets the build recompute Identify's authentication."""
+
+    about: str
+    password: str
+    frames: list[ReplayFrame]
+
+
+class ReplayRow(Ours):
+    """One frame as the page plays it: op name from protocol.json's WebSocketOpCode, and who sent it."""
+
+    op: int
+    name: str
+    dir: Literal["client → server", "server → client"]
+    note: str
+    message: WsMessage = Field(discriminator="op")
+
+
+class ReplayInline(Ours):
+    """The JSON inlined into /websocket/ as <script type="application/json" id="replay">."""
+
+    tag: str
+    password: str
+    ops: dict[str, str]
+    rows: list[ReplayRow]
+
+
+@dataclass(frozen=True, slots=True)
+class ReplayPage:
+    """{{replay_json}} (escaped for a <script> element) and {{replay_tag}} on /websocket/."""
+
+    replay_json: str
+    replay_tag: str
+
+
 # ---------------------------------------------------------------- MCP surface
 class ToolAnnotations(Upstream):
     destructiveHint: bool
@@ -650,6 +761,7 @@ class PageContext:
     ws_sha_short: str
     ws_items: str
     ws_nav: str
+    replay: ReplayPage
     mcp_protocol: str
     mcp_ref: str
     mcp_ref_nav: str

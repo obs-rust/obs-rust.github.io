@@ -16,14 +16,24 @@
 .srch .bar{display:flex;gap:10px;flex-wrap:wrap;position:sticky;top:60px;z-index:5;padding:12px 0;background:linear-gradient(180deg,var(--bg0) 70%,transparent)}
 .srch input{flex:1;min-width:240px;font-size:17px;padding:14px 16px}
 .srch select{width:auto}
-.hit{padding:18px 0;border-bottom:1px solid var(--edge)}
-.hit .t{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
-.hit .t a{font:700 16px var(--mono);color:var(--fg)}
+.tries{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.tries a{font:500 13px var(--mono);padding:6px 10px;border:1px solid var(--edge2);border-radius:4px;color:var(--fg2);transition:border-color .15s,color .15s}
+.tries a:hover{border-color:var(--rust);color:var(--fg)}
+#hits{display:grid;gap:10px;margin-top:12px}
+.hit{padding:12px 14px;border:1px solid var(--edge);border-radius:6px;background:var(--plate);max-height:200px;overflow:hidden;transition:border-color .15s}
+.hit:hover{border-color:var(--edge2)}
+.hit .t{display:flex;gap:10px;align-items:baseline;min-width:0}
+.hit .t a{font:700 16px var(--mono);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .hit .t a:hover{color:var(--rust-hi)}
-.hit .t a.tag{font:700 12px var(--mono);color:var(--dim)}
-.hit .h{color:var(--cu-hi);font:500 13px var(--mono)}
-.hit pre{white-space:pre-wrap;max-height:240px;overflow:auto;font-size:13px;margin-top:8px}
+.hit .k{flex:none;font:700 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--cu-hi)}
+.hit .h{color:var(--dim);font:500 13px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.hit .sn{margin:6px 0 8px;font-size:15px;line-height:1.45;color:var(--fg2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hit .act{display:flex;gap:8px;align-items:center}
+.hit .act a,.hit .act button{font:600 12px var(--mono);min-height:26px;padding:4px 10px;border:1px solid var(--edge2);border-radius:4px;background:transparent;color:var(--fg2);cursor:pointer;transition:border-color .15s,color .15s}
+.hit .act a:hover,.hit .act button:hover{border-color:var(--rust);color:var(--fg)}
+.hit .act .id{margin-left:auto;font:500 12px var(--mono);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .hit mark{background:rgba(232,99,26,.35);color:#fff;border-radius:2px}
+kbd{font:600 12px var(--mono);padding:1px 6px;border:1px solid var(--edge2);border-radius:4px}
 .docs{columns:3 260px;gap:28px;margin-top:20px;font:500 14px var(--mono)}
 .docs h3{font:700 12px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--rust);margin:14px 0 6px;break-after:avoid}
 .docs a{display:block;color:var(--fg2);padding:2px 0;break-inside:avoid}
@@ -64,7 +74,15 @@ curl -s https://obs-rust.com/ai/corpus.json | jq <span class="s">'.chunks[] | se
       <input type="search" id="q" placeholder="Search the corpus… e.g. SetInputSettings, gs_texture_create, testing tiers" aria-label="Search the corpus">
       <select id="g" aria-label="Filter by group"><option value="">All groups</option></select>
     </div>
-    <div id="meta" class="muted" style="font:500 13px var(--mono)">{{corpus_chunks}} chunks · {{corpus_docs}} documents. The index loads when you start typing.</div>
+    <div class="tries" id="tries" aria-label="Example queries">
+      <a href="#q=install%20on%20windows">install on windows</a>
+      <a href="#q=SetInputSettings">SetInputSettings</a>
+      <a href="#q=wait_for">wait_for</a>
+      <a href="#q=verify%20sha256">verify sha256</a>
+      <a href="#q=gs_texture_create">gs_texture_create</a>
+      <a href="#q=testing%20tiers">testing tiers</a>
+    </div>
+    <div id="meta" class="muted" aria-live="polite" style="font:500 13px var(--mono)">{{corpus_chunks}} chunks · {{corpus_docs}} documents. Press <kbd>/</kbd> to search; the index loads when you start.</div>
     <div id="hits"></div>
   </section>
 
@@ -77,27 +95,48 @@ curl -s https://obs-rust.com/ai/corpus.json | jq <span class="s">'.chunks[] | se
 <script>
 (()=>{
 const $=s=>document.querySelector(s);const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const LABEL={project:'Project',docs:'Project docs','rust-port':'Rust port process',knowledge:'Hard-won lessons','libobs-api':'libobs C API',websocket:'obs-websocket v5',mcp:'MCP server'};
+const LABEL={site:'This site',project:'Project',docs:'Project docs','rust-port':'Rust port process',knowledge:'Hard-won lessons','libobs-api':'libobs C API',websocket:'obs-websocket v5',mcp:'MCP server'};
 Object.entries(LABEL).forEach(([g,l])=>{const o=document.createElement('option');o.value=g;o.textContent=l;$('#g').appendChild(o);});
+const STOP=new Set(['on','the','to','how','a','an','in','of','is','do','i','for','and','or','with','my']);
+const TIER={core:4,reference:1,process:0,archive:-4};
 let C=null,loading=null,docBy={};
-function load(){if(loading)return loading;$('#meta').textContent='Loading corpus…';
+const words=t=>t.toLowerCase().split(/[^a-z0-9_]+/).filter(Boolean);
+function load(){if(loading)return loading;$('#meta').textContent='Loading the index…';
   loading=fetch('/ai/corpus.json').then(r=>r.json()).then(j=>{C=j;docBy=Object.fromEntries(C.docs.map(d=>[d.slug,d]));
-    for(const c of C.chunks){c._t=c.text.toLowerCase();c._h=c.breadcrumb.join(' ').toLowerCase();}
-    $('#meta').textContent=`${C.chunks.length} chunks · ${C.docs.length} documents · generated ${C.generated.slice(0,10)}`;}).catch(()=>{$('#meta').textContent='Could not load corpus.json';});
+    for(const c of C.chunks){const tf=new Map();for(const w of words(c.text))tf.set(w,(tf.get(w)||0)+1);c._tf=tf;c._w=[...tf.keys()];
+      c._h=new Set(words(c.breadcrumb.join(' ')+' '+(docBy[c.doc]?docBy[c.doc].title:'')));c._id=c.id.toLowerCase();}
+    $('#meta').textContent=`${C.chunks.length} chunks · ${C.docs.length} documents · generated ${C.generated.slice(0,10)}`;})
+    .catch(()=>{$('#meta').textContent='Could not load corpus.json';});
   return loading;}
-async function search(){const raw=$('#q').value.trim(),g=$('#g').value;const terms=raw.toLowerCase().split(/\s+/).filter(t=>t.length>1);
+function termHits(c,t){let n=c._tf.get(t)||0;if(!n&&t.length>=3)for(const w of c._w)if(w.startsWith(t)){n+=c._tf.get(w)*.6;}return n;}
+async function search(){const raw=$('#q').value.trim(),g=$('#g').value,lc=raw.toLowerCase();
+  const all=words(raw),terms=all.filter(t=>t.length>2&&!STOP.has(t));const use=terms.length?terms:all;
   history.replaceState(null,'',raw?'#q='+encodeURIComponent(raw):location.pathname);
-  if(!terms.length){$('#hits').innerHTML='';return;}await load();if(!C)return;
-  const scored=[];for(const c of C.chunks){if(g&&c.group!==g)continue;let s=0,all=true;
-    for(const t of terms){let n=0,i=-1;while((i=c._t.indexOf(t,i+1))!==-1&&n<20)n++;const h=c._h.includes(t)?8:0;if(!n&&!h){all=false;break;}s+=Math.log(1+n)*3+h;}
-    if(all){if(c._t.includes(raw.toLowerCase()))s+=10;if(c._h.includes(raw.toLowerCase()))s+=20;scored.push([s,c]);}}
-  scored.sort((a,b)=>b[0]-a[0]);const re=new RegExp('('+terms.map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','gi');
-  $('#hits').innerHTML=`<p class="muted" style="font:500 13px var(--mono);margin:8px 0">${scored.length} matching chunks</p>`+scored.slice(0,40).map(([s,c])=>{const d=docBy[c.doc];
-    let i=c._t.indexOf(terms[0]);i=Math.max(0,i-200);const snip=(i?'…':'')+c.text.slice(i,i+900);
-    return `<div class="hit"><div class="t"><a href="${esc(c.url)}">${esc(d.title)}</a><span class="tag">${esc(LABEL[c.group]||c.group)}</span><a class="tag" href="${esc(c.source)}">source ↗</a></div>
-      <div class="h">§ ${esc(c.breadcrumb.slice(1).join(' › ')||'(top)')} · ${esc(c.kind)} · ${esc(c.id)}</div><pre>${esc(snip).replace(re,'<mark>$1</mark>')}</pre></div>`;}).join('');}
+  $('#tries').hidden=!!raw;
+  if(!use.length){$('#hits').innerHTML='';$('#meta').textContent=C?`${C.chunks.length} chunks · ${C.docs.length} documents`:$('#meta').textContent;return;}
+  await load();if(!C)return;
+  const scored=[];
+  for(const c of C.chunks){if(g&&c.group!==g)continue;let s=0,ok=true;
+    for(const t of use){const n=termHits(c,t),h=[...c._h].some(w=>w===t||(t.length>=3&&w.startsWith(t)))?1:0;if(!n&&!h){ok=false;break;}s+=Math.log(1+n)*3+h*6;}
+    if(!ok)continue;
+    if(c._id===lc||c._id.endsWith(':'+lc))s+=60;
+    if(raw.length>3&&c.text.toLowerCase().includes(lc))s+=8;
+    s+=TIER[c.tier]||0;if(c.group==='site')s+=6;if(c.kind!=='prose')s+=2;
+    scored.push([s,c]);}
+  scored.sort((a,b)=>b[0]-a[0]);
+  const re=new RegExp('\\b('+use.map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','gi');
+  $('#meta').textContent=`${scored.length} result${scored.length==1?'':'s'} for “${raw}”`;
+  $('#hits').innerHTML=scored.slice(0,30).map(([s,c])=>{const d=docBy[c.doc]||{title:c.doc};
+    const body=c.text.replace(/^\[[^\]]*\]\n/,'').replace(/```[a-z]*\n?/g,'').replace(/\s+/g,' ');
+    let i=body.toLowerCase().search(re);i=Math.max(0,i-60);const snip=(i?'…':'')+body.slice(i,i+260);
+    return `<article class="hit"><div class="t"><span class="k">${esc(c.kind)}</span><a href="${esc(c.url)}">${esc(c.kind.startsWith('ws-')||c.kind.startsWith('mcp-')?c.breadcrumb[c.breadcrumb.length-1]:d.title)}</a></div>
+      <div class="h">${esc(c.breadcrumb.join(' › '))}</div><p class="sn">${esc(snip).replace(re,'<mark>$1</mark>')}</p>
+      <div class="act"><a href="${esc(c.url)}">Open</a><button type="button" class="cp" data-u="${esc(c.url)}" data-i="${esc(c.id)}">Copy link + id</button><span class="id">${esc(c.id)}</span></div></article>`;}).join('');}
+$('#hits').addEventListener('click',e=>{const b=e.target.closest('.cp');if(!b)return;navigator.clipboard.writeText(b.dataset.u+'\n'+b.dataset.i).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy link + id',1400)});});
 let tm;$('#q').addEventListener('focus',load,{once:true});$('#q').addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(search,120);});$('#g').addEventListener('change',search);
-const m=location.hash.match(/^#q=(.*)/);if(m){$('#q').value=decodeURIComponent(m[1]);search();}
+document.addEventListener('keydown',e=>{if(e.key==='/'&&!/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement||{}).tagName||'')){e.preventDefault();$('#q').focus();}});
+const fromHash=()=>{const m=location.hash.match(/^#q=(.*)/);if(m){$('#q').value=decodeURIComponent(m[1]);search();}};
+addEventListener('hashchange',fromHash);fromHash();
 })();
 </script>
 </body>

@@ -118,7 +118,8 @@ def strip_markup(text: str) -> str:
 def anchored_url(doc: Doc, anchor: str, site: str) -> str:
     """Absolute URL of a prose section: the GitHub source pinned to the commit when the doc lives
     there, else the doc's page on this site; always with a fragment."""
-    base = doc.source if doc.source.startswith("https://") else site + doc.site_url
+    # GitHub-hosted docs: the pinned source renders the anchor; this site's own docs: their markdown twin
+    base = doc.source if doc.source.startswith("https://github.com/") else site + doc.site_url
     return f"{base.split('#')[0]}#{anchor}"
 
 

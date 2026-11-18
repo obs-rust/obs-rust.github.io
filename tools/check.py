@@ -189,6 +189,7 @@ def main() -> int:
     hero = site / "assets/main-window.webp"
     if not hero.is_file() or hero.stat().st_size > 120_000:
         errs.append("assets/main-window.webp missing or over 120 KB")
+    errs.extend(check_finish(site))
     # every download link carries a full SHA-256 (DESIGN.md P0 #5)
     n_dl = home.count('class="sha"')
     if n_dl == 0 or n_dl != len(re.findall(r'<li><a href="https://github.com/obs-rust/obs-studio/releases/download/', home)):
@@ -294,6 +295,59 @@ def check_one_system(site: Path) -> list[str]:
             parts = re.findall(r"var\([^)]*\)|\S+", m[1].strip())
             if any(part != "0" and not part.startswith("var(--r-") for part in parts):
                 errs.append(f"{rel}: radius is not a --r-* token: {m[0].strip()!r}")
+    return errs
+
+
+# DESIGN.md §6, §8, backlog #28: the second capture, the social card, no orphan assets, four motions
+CARD = "assets/social-card.png"
+SHOT = re.compile(r'<img src="/assets/gpu-status-red\.webp"[^>]*>.*?href="https://github\.com/obs-rust/obs-studio/blob/'
+                  r'[0-9a-f]{40}/docs/images/gpu-status-red\.png"', re.S)
+
+
+def png_size(data: bytes) -> tuple[int, int]:
+    """Width and height from a PNG's IHDR chunk, (0, 0) if it is not a PNG."""
+    if data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
+        return 0, 0
+    return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+
+
+def check_finish(site: Path) -> list[str]:
+    """S3: two real pictures with receipts on /, a 1200x630 og:image under 200 KB on every page, every shipped
+    asset referenced, and motion only as §6 allows (one transition rule, at most 3 @keyframes, 1 repeating)."""
+    errs: list[str] = []
+    home = (site / "index.html").read_text() if (site / "index.html").is_file() else ""
+    shot = site / "assets/gpu-status-red.webp"
+    if not shot.is_file() or shot.stat().st_size > 120_000:
+        errs.append("assets/gpu-status-red.webp missing or over 120 KB")
+    if not SHOT.search(home):
+        errs.append("index.html: the GPU status capture lacks its receipt pinned to a commit")
+    card = site / CARD
+    data = card.read_bytes() if card.is_file() else b""
+    if png_size(data) != (1200, 630) or len(data) > 200_000:
+        errs.append(f"{CARD}: {png_size(data)} and {len(data)} bytes, want a 1200x630 PNG under 200 KB")
+    pages = sorted(site.rglob("*.html"))
+    for page in pages:
+        text = page.read_text()
+        for prop, want in (("og:image", f"https://obs-rust.com/{CARD}"), ("og:image:width", "1200"),
+                           ("og:image:height", "630")):
+            if f'<meta property="{prop}" content="{want}">' not in text:
+                errs.append(f"{page.relative_to(site)}: {prop} is not {want}")
+        if "@keyframes" in text:
+            errs.append(f"{page.relative_to(site)}: its own @keyframes; motion lives in site.css")
+    refs = "".join(p.read_text() for p in pages) + "".join(p.read_text() for p in (site / "assets").rglob("*.css"))
+    for f in sorted((site / "assets").rglob("*")):
+        if f.is_file() and f"/assets/{f.relative_to(site / 'assets')}" not in refs:
+            errs.append(f"assets/{f.relative_to(site / 'assets')}: shipped but nothing references it")
+    css = (site / "assets/site.css").read_text()
+    shared = re.search(r"(?:^|})\s*a,button,summary[^{]*\{transition:([^}]*)\}", css, re.M)
+    durations = [float(x) for x in re.findall(r"(\d*\.?\d+)s\b", shared[1])] if shared else []
+    if not durations or any(not 0.12 <= d <= 0.18 for d in durations):
+        errs.append("site.css: no shared a,button,summary transition of 120 to 180 ms")
+    if css.count("@keyframes") > 3 or css.count("infinite") > 1:
+        errs.append(f"site.css: {css.count('@keyframes')} @keyframes (at most 3), {css.count('infinite')} infinite (at most 1)")
+    if not re.search(r"prefers-reduced-motion:\s*reduce\)\{\*,\*::before,\*::after\{animation:none!important;"
+                     r"transition:none!important\}", css):
+        errs.append("site.css: motion is not switched off under prefers-reduced-motion")
     return errs
 
 

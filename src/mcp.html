@@ -42,7 +42,7 @@
 .tool.hide{display:none}
 .tool>summary{display:flex;align-items:baseline;gap:8px;padding:7px 4px;list-style:none;cursor:pointer;scroll-margin-top:130px;min-width:0}
 .tool>summary::-webkit-details-marker{display:none}
-.tool>summary::before{content:"▸";flex:none;width:12px;color:var(--dim);font:var(--t-12) var(--mono);transition:transform .15s}
+.tool>summary::before{content:"▸";flex:none;width:12px;color:var(--dim);font:var(--t-12) var(--mono)}
 .tool[open]>summary::before{transform:rotate(90deg)}
 .tool>summary:hover{background:rgba(255,255,255,.03)}
 .tool>summary .tag{flex:none}
@@ -191,7 +191,7 @@ claude mcp add obs -- "$PWD/mcp" --mcp</pre>
 document.querySelectorAll('.tabset').forEach(ts=>{const b=[...ts.querySelectorAll('.tabs button')],p=[...ts.querySelectorAll(':scope>.pane')];
   b.forEach((x,i)=>x.addEventListener('click',()=>{b.forEach((y,j)=>y.setAttribute('aria-selected',i===j));p.forEach((y,j)=>y.classList.toggle('on',i===j));}));});
 document.querySelectorAll('pre').forEach(pre=>{const c=document.createElement('button');c.className='copy';c.textContent='copy';
-  c.onclick=()=>{const t=pre.cloneNode(true);t.querySelector('.copy')?.remove();navigator.clipboard.writeText(t.innerText).then(()=>{c.textContent='copied';setTimeout(()=>c.textContent='copy',1200);});};pre.appendChild(c);});
+  c.onclick=()=>{const t=pre.cloneNode(true);t.querySelector('.copy')?.remove();navigator.clipboard.writeText(t.innerText).then(()=>{c.textContent='copied';setTimeout(()=>c.textContent='copy',1500);});};pre.appendChild(c);});
 // a #name link opens its tool, on load, on hashchange and when the same link is followed again
 (()=>{const open=()=>{const t=location.hash.length>1&&document.getElementById(decodeURIComponent(location.hash.slice(1)));
   const d=t&&t.closest('details.tool');if(d&&!d.open){d.open=true;t.scrollIntoView();}};

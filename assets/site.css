@@ -67,8 +67,8 @@ summary{min-height:24px;padding-top:3px;padding-bottom:3px}
 input[type=checkbox]{width:24px;height:24px;accent-color:var(--rust);vertical-align:middle}
 
 /* buttons */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:var(--r-ctl);border:1px solid var(--edge2);background:linear-gradient(180deg,#2a2e31,#1d2023);color:var(--fg);font:700 var(--t-13) var(--mono);letter-spacing:.06em;text-transform:uppercase;transition:transform .15s,border-color .15s,box-shadow .15s;cursor:pointer}
-.btn:hover{transform:translateY(-1px);border-color:var(--fg2);color:var(--fg)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:var(--r-ctl);border:1px solid var(--edge2);background:linear-gradient(180deg,#2a2e31,#1d2023);color:var(--fg);font:700 var(--t-13) var(--mono);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.btn:hover{border-color:var(--fg2);color:var(--fg)}
 .btn.primary{background:linear-gradient(180deg,var(--rust-hi),var(--rust) 45%,var(--rust-lo));border-color:#ffb27a;color:#120700;box-shadow:0 8px 30px -8px rgba(232,99,26,.6),inset 0 1px 0 rgba(255,255,255,.35)}
 .btn.primary:hover{color:#120700;box-shadow:0 12px 40px -8px rgba(232,99,26,.8),inset 0 1px 0 rgba(255,255,255,.35)}
 .btn.ghost{background:transparent}
@@ -102,8 +102,8 @@ section{padding:var(--section) 0 0}
   .grid.g3:has(>:last-child:nth-child(3n+1))>:first-child,
   .grid.g4:has(>:last-child:nth-child(4n+1))>:first-child{grid-column:span 2}
 }
-.card{display:flex;flex-direction:column;gap:10px;padding:var(--s-3);color:var(--fg);transition:transform .18s,border-color .18s}
-a.card:hover{transform:translateY(-3px);border-color:var(--rust);color:var(--fg)}
+.card{display:flex;flex-direction:column;gap:10px;padding:var(--s-3);color:var(--fg)}
+a.card:hover{border-color:var(--rust);color:var(--fg)}
 .card p{color:var(--dim);font-size:var(--t-ui)}
 .card .go{margin-top:auto;font:700 var(--t-label) var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--rust)}
 .ico{width:40px;height:40px;border-radius:var(--r-plate);display:grid;place-items:center;background:rgba(232,99,26,.12);border:1px solid rgba(232,99,26,.4);color:var(--rust-hi);font:700 var(--t-15) var(--mono)}
@@ -161,6 +161,15 @@ footer.site .blurb{margin-top:12px;font-size:var(--t-ui)}
 footer.site .fine{margin-top:var(--s-4);color:var(--dim);font-size:var(--t-13)}
 @media(max-width:760px){footer.site .cols{grid-template-columns:1fr 1fr}}
 
+/* motion (DESIGN.md §6): four and only four, all here, all off under prefers-reduced-motion.
+   (a) every link, button and summary eases colour, border and background, by this one rule */
+a,button,summary,summary::before{transition:color .15s ease,background-color .15s ease,border-color .15s ease,box-shadow .15s ease,opacity .15s ease,transform .15s ease}
+/* (b) the conversion bar fills once, from zero to its figure */
+@keyframes fill{from{flex-grow:0}}
+.bars .r{animation:fill 1.2s cubic-bezier(.2,.7,.2,1) both}
+/* (c) the tally pulses while the console is connected: the one animation that repeats. (d) "copied" is the page's own 1.5 s state */
+@keyframes tally{50%{opacity:.55}}
+.tally.live,.st.ok{animation:tally 1.6s ease-in-out infinite}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 .receipt{font:500 var(--t-label) var(--mono);color:var(--dim);margin-top:14px}

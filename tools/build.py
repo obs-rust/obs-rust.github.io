@@ -45,6 +45,8 @@ from models import (  # noqa: E402
     Limit,
     Checksums,
     HeroImage,
+    LedgerPicture,
+    SocialCard,
     DownloadGroup,
     DownloadOption,
     GhAsset,
@@ -179,6 +181,76 @@ def hero_image(obs: Path, out: Path) -> HeroImage:
     if size > HERO_MAX_BYTES:
         raise SystemExit(f"hero: main-window.webp is {size} bytes (> {HERO_MAX_BYTES})")
     return HeroImage(hero_src="/assets/main-window.webp", hero_w=w, hero_h=h, hero_kb=f"{size / 1e3:.0f}")
+
+
+# ---------------------------------------------------------------- the finish (DESIGN.md §6, backlog #28)
+GPU_SRC = "docs/images/gpu-status-red.png"
+GPU_FEATURE = "GPU acceleration light"
+CARD_PATH, CARD_W, CARD_H, CARD_MAX_BYTES = "/assets/social-card.png", 1200, 630, 200_000
+
+
+def ledger_picture(obs: Path, out: Path, feats: list[Feature], obs_sha: str) -> LedgerPicture:
+    """Re-encode the GPU status capture like the hero and pair it with its ledger entry; fail if either is gone."""
+    from PIL import Image
+
+    src = obs / GPU_SRC
+    if not src.is_file():
+        raise SystemExit(f"picture: {GPU_SRC} missing from the obs-studio checkout (sparse path?)")
+    entry = next((f for f in feats if f.name.rstrip(".") == GPU_FEATURE), None)
+    if entry is None:
+        raise SystemExit(f"picture: the features ledger has no entry named {GPU_FEATURE!r}")
+    dest = out / "assets" / "gpu-status-red.webp"
+    with Image.open(src) as im:
+        w, h = im.size
+        im.convert("RGB").save(dest, "WEBP", quality=82, method=6)
+    if dest.stat().st_size > HERO_MAX_BYTES:
+        raise SystemExit(f"picture: gpu-status-red.webp is {dest.stat().st_size} bytes (> {HERO_MAX_BYTES})")
+    first = re.split(r"(?<=[.)])\s+(?=[A-Z])", md_inline(entry.desc), maxsplit=1)[0]
+    return LedgerPicture(gpu_src="/assets/gpu-status-red.webp", gpu_w=w, gpu_h=h,
+                         gpu_name=md_inline(entry.name.rstrip(".")), gpu_desc=first, gpu_area=esc(entry.area),
+                         gpu_platforms=esc(entry.platforms), gpu_date=esc(entry.date),
+                         gpu_href=f"https://github.com/{REPO}/blob/{obs_sha}/{GPU_SRC}")
+
+
+def social_card(obs: Path, out: Path, stats: RepoStats) -> SocialCard:
+    """og:image: the mascot, the name, the libobs figure and the app, 1200x630 PNG under 200 KB (DESIGN.md §8)."""
+    from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+
+    fonts = ROOT / "assets" / "fonts"
+
+    def font(name: str, size: int, weight: int | None = None) -> ImageFont.FreeTypeFont:
+        f = ImageFont.truetype(fonts / name, size)
+        if weight is not None:
+            f.set_variation_by_axes([weight])
+        return f
+
+    card = Image.new("RGB", (CARD_W, CARD_H), "#0b0c0d")
+    glow = Image.new("RGB", (CARD_W, CARD_H), "#0b0c0d")
+    ImageDraw.Draw(glow).ellipse((620, -260, 1500, 300), fill="#3a1d0c")
+    card.paste(glow.filter(ImageFilter.GaussianBlur(120)))
+    d = ImageDraw.Draw(card)
+    with Image.open(obs / HERO_SRC) as shot:
+        sw = 600
+        sh = round(shot.height * sw / shot.width)
+        x0, y0 = CARD_W - sw - 56, (CARD_H - sh) // 2
+        d.rounded_rectangle((x0 - 12, y0 - 12, x0 + sw + 12, y0 + sh + 12), radius=6, fill="#1d2023", outline="#4a5055")
+        card.paste(ImageOps.contain(shot.convert("RGB"), (sw, sh), Image.Resampling.LANCZOS), (x0, y0))
+    with Image.open(ROOT / "tools" / "obs-rust-badge.png") as badge:
+        b = ImageOps.contain(badge.convert("RGBA"), (150, 150), Image.Resampling.LANCZOS)
+        card.paste(b, (56, 52), b)
+    stencil = font("big-shoulders-stencil-display.woff2", 76, 900)
+    d.text((56, 228), "OBS STUDIO", font=stencil, fill="#ece8e1")
+    d.text((56, 300), "RUST", font=stencil, fill="#e8631a")
+    d.text((52, 384), f"{stats.libobs_pct}%", font=font("big-shoulders-stencil-display.woff2", 132, 900), fill="#ff8a3d")
+    d.text((56, 528), "of libobs ported to Rust", font=font("barlow-600.woff2", 30), fill="#c9c5bd")
+    d.text((56, 572), f"obs-rust.com · conversion.json @ {stats.conv_commit[:7]}",
+           font=font("jetbrains-mono.woff2", 17, 500), fill="#62d1b1")
+    dest = out / CARD_PATH.lstrip("/")
+    card.quantize(256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(dest, "PNG", optimize=True)
+    size = dest.stat().st_size
+    if size > CARD_MAX_BYTES:
+        raise SystemExit(f"social card: {dest.name} is {size} bytes (> {CARD_MAX_BYTES})")
+    return SocialCard(path=CARD_PATH, width=CARD_W, height=CARD_H, size=size)
 
 
 def release_checksums(rel: GhRelease | None, offline: bool) -> Checksums | None:
@@ -604,7 +676,10 @@ def head(title: str, desc: str, path: str = "/") -> str:
 <meta property="og:description" content="{esc(desc)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{SITE}{path}">
-<meta property="og:image" content="{SITE}/assets/obs-rust-bot-logo.png">
+<meta property="og:image" content="{SITE}{CARD_PATH}">
+<meta property="og:image:width" content="{CARD_W}">
+<meta property="og:image:height" content="{CARD_H}">
+<meta property="og:image:alt" content="The obs-rust mascot, the name OBS Studio Rust, the share of libobs ported to Rust, and the app's main window">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0b0c0d">
 <link rel="icon" href="/assets/obs-rust-badge.svg" type="image/svg+xml">
@@ -713,6 +788,8 @@ def main() -> None:
     stats, rel, rels_all = repo_stats(a.offline)
     chans = channels(rels_all, a.offline)
     ledger = parse_ledger((obs / "docs/features.md").read_text())
+    gpu_img = ledger_picture(obs, out, ledger.features, obs_sha)
+    social_card(obs, out, stats)
 
     # corpus
     def make_doc(group: str, path: str, text: str, url: str) -> Doc:
@@ -847,7 +924,7 @@ def main() -> None:
     mref, mnav = mcpmod.render_reference(surface.tools)
     hero = mcpmod.render_transcript(next(x for x in sessions if x.slug == "record-when-ready"))
     ctx = PageContext(
-        stats=stats, mcp=mstats, hero=hero_img,
+        stats=stats, mcp=mstats, hero=hero_img, gpu=gpu_img,
         release_tag=esc(rel.tag_name) if rel else "—",
         release_name=esc(rel.name or rel.tag_name) if rel else "releases",
         release_url=esc(rel.html_url) if rel else f"https://github.com/{REPO}/releases",

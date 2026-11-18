@@ -41,6 +41,7 @@ jobs:
             /docs/
             !/docs/images/
             /docs/images/appimage-main-window.png
+            /docs/images/gpu-status-red.png
             !/docs/rust-port/native-graph/
       - uses: astral-sh/setup-uv@v6
       - name: Build site

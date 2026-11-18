@@ -14,11 +14,11 @@
 .srch input{flex:1;min-width:240px;font-size:var(--t-17);padding:14px 16px}
 .srch select{width:auto}
 .tries{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
-.tries a{font:500 var(--t-13) var(--mono);padding:6px 10px;border:1px solid var(--edge2);border-radius:var(--r-ctl);color:var(--fg2);transition:border-color .15s,color .15s}
+.tries a{font:500 var(--t-13) var(--mono);padding:6px 10px;border:1px solid var(--edge2);border-radius:var(--r-ctl);color:var(--fg2)}
 .tries a:hover{border-color:var(--rust);color:var(--fg)}
 #meta{font:500 var(--t-13) var(--mono)}
 #hits{display:grid;gap:10px;margin-top:12px}
-.hit{padding:12px 14px;border:1px solid var(--edge);border-radius:var(--r-plate);background:var(--plate);max-height:200px;overflow:hidden;transition:border-color .15s}
+.hit{padding:12px 14px;border:1px solid var(--edge);border-radius:var(--r-plate);background:var(--plate);max-height:200px;overflow:hidden}
 .hit:hover{border-color:var(--edge2)}
 .hit .t{display:flex;gap:10px;align-items:baseline;min-width:0}
 .hit .t a{font:700 var(--t-15) var(--mono);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -27,7 +27,7 @@
 .hit .h{color:var(--dim);font:500 var(--t-13) var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .hit .sn{margin:6px 0 8px;font-size:var(--t-ui);line-height:1.45;color:var(--fg2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .hit .act{display:flex;gap:8px;align-items:center}
-.hit .act a,.hit .act button{font:600 var(--t-label) var(--mono);min-height:26px;padding:4px 10px;border:1px solid var(--edge2);border-radius:var(--r-ctl);background:transparent;color:var(--fg2);cursor:pointer;transition:border-color .15s,color .15s}
+.hit .act a,.hit .act button{font:600 var(--t-label) var(--mono);min-height:26px;padding:4px 10px;border:1px solid var(--edge2);border-radius:var(--r-ctl);background:transparent;color:var(--fg2);cursor:pointer}
 .hit .act a:hover,.hit .act button:hover{border-color:var(--rust);color:var(--fg)}
 .hit .act .id{margin-left:auto;font:500 var(--t-label) var(--mono);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .hit mark{background:rgba(232,99,26,.35);color:#fff;border-radius:var(--r-ctl)}
@@ -135,7 +135,7 @@ async function search(){const raw=$('#q').value.trim(),g=$('#g').value,lc=raw.to
     return `<article class="hit"><div class="t"><span class="k">${esc(c.kind)}</span><a href="${esc(c.url)}">${esc(c.kind.startsWith('ws-')||c.kind.startsWith('mcp-')?c.breadcrumb[c.breadcrumb.length-1]:d.title)}</a></div>
       <div class="h">${esc(c.breadcrumb.join(' › '))}</div><p class="sn">${esc(snip).replace(re,'<mark>$1</mark>')}</p>
       <div class="act"><a href="${esc(c.url)}">Open</a><button type="button" class="cp" data-u="${esc(c.url)}" data-i="${esc(c.id)}">Copy link + id</button><span class="id">${esc(c.id)}</span></div></article>`;}).join('');}
-$('#hits').addEventListener('click',e=>{const b=e.target.closest('.cp');if(!b)return;navigator.clipboard.writeText(b.dataset.u+'\n'+b.dataset.i).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy link + id',1400)});});
+$('#hits').addEventListener('click',e=>{const b=e.target.closest('.cp');if(!b)return;navigator.clipboard.writeText(b.dataset.u+'\n'+b.dataset.i).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy link + id',1500)});});
 let tm;$('#q').addEventListener('focus',load,{once:true});$('#q').addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(search,120);});$('#g').addEventListener('change',search);
 document.addEventListener('keydown',e=>{if(e.key==='/'&&!/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement||{}).tagName||'')){e.preventDefault();$('#q').focus();}});
 const fromHash=()=>{const m=location.hash.match(/^#q=(.*)/);if(m){$('#q').value=decodeURIComponent(m[1]);search();}};

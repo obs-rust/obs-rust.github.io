@@ -585,12 +585,38 @@ class HeroImage:
 
 
 @dataclass(frozen=True, slots=True)
+class LedgerPicture:
+    """A second upstream capture on /, re-encoded like the hero and shown beside its features-ledger entry."""
+
+    gpu_src: str
+    gpu_w: int
+    gpu_h: int
+    gpu_name: str
+    gpu_desc: str
+    gpu_area: str
+    gpu_platforms: str
+    gpu_date: str
+    gpu_href: str
+
+
+@dataclass(frozen=True, slots=True)
+class SocialCard:
+    """The generated og:image: a PNG of exactly width x height, at most max_bytes."""
+
+    path: str
+    width: int
+    height: int
+    size: int
+
+
+@dataclass(frozen=True, slots=True)
 class PageContext:
     """Every {{placeholder}} a page template may use. Nested stats are flattened by as_mapping()."""
 
     stats: RepoStats
     mcp: McpStats
     hero: HeroImage
+    gpu: LedgerPicture
     release_tag: str
     release_name: str
     release_url: str

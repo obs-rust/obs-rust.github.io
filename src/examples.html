@@ -206,7 +206,7 @@ printf <span class="s">'%s\n'</span> <span class="s">'{"jsonrpc":"2.0","id":1,"m
 document.querySelectorAll('.tabset').forEach(ts=>{const b=[...ts.querySelectorAll('.tabs button')],p=[...ts.querySelectorAll('.pane')];
   b.forEach((x,i)=>x.addEventListener('click',()=>{b.forEach((y,j)=>y.setAttribute('aria-selected',i===j));p.forEach((y,j)=>y.classList.toggle('on',i===j));}));});
 document.querySelectorAll('pre').forEach(pre=>{const c=document.createElement('button');c.className='copy';c.textContent='copy';
-  c.onclick=()=>{navigator.clipboard.writeText(pre.innerText.replace(/\ncopy$/,'')).then(()=>{c.textContent='copied';setTimeout(()=>c.textContent='copy',1200);});};pre.appendChild(c);});
+  c.onclick=()=>{navigator.clipboard.writeText(pre.innerText.replace(/\ncopy$/,'')).then(()=>{c.textContent='copied';setTimeout(()=>c.textContent='copy',1500);});};pre.appendChild(c);});
 </script>
 </body>
 </html>

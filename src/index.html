@@ -37,7 +37,7 @@
 .chan h3 span{font-size:var(--t-13);color:var(--dim)}
 details.chan>summary,.older>summary{display:flex;align-items:baseline;gap:10px;list-style:none;cursor:pointer}
 details.chan>summary::-webkit-details-marker,.older>summary::-webkit-details-marker{display:none}
-details.chan>summary::before,.older>summary::before{content:"▸";color:var(--dim);font:var(--t-15) var(--mono);transition:transform .15s}
+details.chan>summary::before,.older>summary::before{content:"▸";color:var(--dim);font:var(--t-15) var(--mono)}
 details.chan[open]>summary::before,.older[open]>summary::before{transform:rotate(90deg)}
 details.chan>summary:hover h3 b{color:var(--rust-hi)}
 .older{margin-top:var(--s-3)}
@@ -58,6 +58,7 @@ details.chan>summary:hover h3 b{color:var(--rust-hi)}
 .limits li{display:grid;grid-template-columns:130px minmax(0,1fr);gap:2px var(--s-2);align-items:baseline;font-size:var(--t-ui)}
 .limits li b{font:700 var(--t-label) var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--haz)}
 .limits li .receipt{grid-column:2;margin:0}
+@media(min-width:1100px){.limits ul{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s-2) var(--s-5)}}
 @media(max-width:700px){.limits li{grid-template-columns:minmax(0,1fr)}.limits li .receipt{grid-column:1}}
 
 /* crossover */
@@ -88,7 +89,17 @@ details.chan>summary:hover h3 b{color:var(--rust-hi)}
 /* features */
 .feat .card{padding:18px 20px;gap:6px}
 .feat .card h3{font-size:var(--t-19)}
-.feat .card .m{font:500 var(--t-label) var(--mono);color:var(--dim);display:flex;gap:8px;flex-wrap:wrap}
+.feat .card .m,.shot .m{font:500 var(--t-label) var(--mono);color:var(--dim);display:flex;gap:8px;flex-wrap:wrap}
+/* the second capture, beside its ledger entry */
+.shot{margin:var(--s-3) 0 0;padding:var(--s-2);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);grid-template-areas:"i h" "i m" "i r" "d d";gap:var(--s-1) var(--s-2);align-items:start;align-content:start}
+.shot img{grid-area:i;display:block;width:100%;height:auto;border:1px solid #000;border-radius:var(--r-ctl)}
+.shot figcaption{display:contents}
+.shot h3{grid-area:h;font-size:var(--t-19)}
+.shot .d{grid-area:d;color:var(--dim);font-size:var(--t-ui)}
+.shot .m{grid-area:m}
+.shot .receipt{grid-area:r;margin:0}
+@media(min-width:900px){.ledger{display:grid;grid-template-columns:minmax(0,1fr) 324px;gap:var(--s-5);align-items:start}
+  .shot{margin:0;padding:var(--s-1);grid-template-columns:minmax(0,1fr);grid-template-areas:"i" "h" "d" "m" "r"}}
 
 /* tiers */
 .tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:var(--s-3);counter-reset:t}
@@ -98,7 +109,7 @@ details.chan>summary:hover h3 b{color:var(--rust-hi)}
 .how{margin-top:var(--s-4)}
 .how>summary{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 14px;list-style:none;cursor:pointer}
 .how>summary::-webkit-details-marker{display:none}
-.how>summary::before{content:"▸";color:var(--dim);font:var(--t-15) var(--mono);transition:transform .15s}
+.how>summary::before{content:"▸";color:var(--dim);font:var(--t-15) var(--mono)}
 .how[open]>summary{margin-bottom:var(--s-2)}
 .how[open]>summary::before{transform:rotate(90deg)}
 .how>summary .muted{font:600 var(--t-13) var(--mono);letter-spacing:.08em;text-transform:uppercase}
@@ -111,7 +122,7 @@ details.chan>summary:hover h3 b{color:var(--rust-hi)}
 
 /* build with it: rows in one plate */
 .rows{margin-top:var(--s-3);display:flex;flex-direction:column}
-.rows>a{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:var(--s-2);align-items:center;padding:14px var(--s-3);color:var(--fg);border-top:1px solid var(--edge);transition:background .15s}
+.rows>a{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:var(--s-2);align-items:center;padding:14px var(--s-3);color:var(--fg);border-top:1px solid var(--edge)}
 .rows>a:first-child{border-top:0}
 .rows>a:hover{background:rgba(255,255,255,.03);color:var(--fg)}
 .rows h3{font-size:var(--t-19)}
@@ -227,11 +238,22 @@ details.chan>summary:hover h3 b{color:var(--rust-hi)}
 </section>
 
 <section id="changes">
-  <div class="wrap">
+  <div class="wrap ledger">
+    <div>
     <span class="eyebrow">Features ledger</span>
     <h2>What's <em>different</em></h2>
     <p class="lede">Every user-visible change from upstream gets a line in <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/features.md">docs/features.md</a>. Newest first:</p>
     {{feature_cards}}
+    </div>
+    <figure class="plate shot">
+      <img src="{{gpu_src}}" width="{{gpu_w}}" height="{{gpu_h}}" alt="A mockup of the GPU acceleration light in the red state: the status bar light, the dialog that explains it and the graphics lines of the startup log." loading="lazy" decoding="async">
+      <figcaption>
+        <h3>{{gpu_name}}</h3>
+        <p class="d">{{gpu_desc}}</p>
+        <div class="m"><span class="tag rust">{{gpu_area}}</span><span class="tag">{{gpu_platforms}}</span><span>{{gpu_date}}</span></div>
+        <p class="receipt">Picture: <a href="{{gpu_href}}">docs/images/gpu-status-red.png</a>, an earlier mockup from docs/gpu-status.md (styling approximate).</p>
+      </figcaption>
+    </figure>
   </div>
 </section>
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["jsonschema>=4.22", "pydantic>=2.7"]
+# dependencies = ["jsonschema>=4.22", "pydantic>=2.7", "pillow>=11"]
 # ///
 """Build obs-rust.com into _site/.
 
@@ -40,6 +40,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import corpus as corpusmod  # noqa: E402
 import mcp as mcpmod  # noqa: E402
 from models import (  # noqa: E402
+    Checksums,
+    HeroImage,
     DownloadGroup,
     DownloadOption,
     Chunk,
@@ -125,7 +127,6 @@ def repo_stats(offline: bool) -> tuple[RepoStats, GhRelease | None]:
         rust_pct=r, c_pct=c, cpp_pct=x, other_pct=round(max(0.0, 100 - r - c - x), 1),
         rust_mb=f"{langs.bytes_of('Rust') / 1e6:.1f}", c_mb=f"{langs.bytes_of('C') / 1e6:.1f}",
         cpp_mb=f"{langs.bytes_of('C++') / 1e6:.1f}",
-        xo_title="Rust has passed <em>C</em>" if r > c else "Rust is closing on <em>C</em>",
         libobs_pct=f"{conv.libobs.all.percent:.1f}",
         app_pct=f"{conv.app.percent:.1f}",
         conv_commit=conv.commit, conv_date=conv.date,
@@ -150,23 +151,57 @@ DL_GROUPS: tuple[DownloadGroup, ...] = (
 )
 
 
-def render_downloads(rel: GhRelease | None) -> str:
+HERO_SRC = "docs/images/appimage-main-window.png"
+HERO_MAX_BYTES = 120_000
+
+
+def hero_image(obs: Path, out: Path) -> HeroImage:
+    """Re-encode the AppImage test's main-window screenshot as WebP; fail the build if it is missing."""
+    from PIL import Image
+
+    src = obs / HERO_SRC
+    if not src.is_file():
+        raise SystemExit(f"hero: {HERO_SRC} missing from the obs-studio checkout (sparse path?)")
+    dest = out / "assets" / "main-window.webp"
+    with Image.open(src) as im:
+        w, h = im.size
+        im.convert("RGB").save(dest, "WEBP", quality=82, method=6)
+    size = dest.stat().st_size
+    if size > HERO_MAX_BYTES:
+        raise SystemExit(f"hero: main-window.webp is {size} bytes (> {HERO_MAX_BYTES})")
+    return HeroImage(hero_src="/assets/main-window.webp", hero_w=w, hero_h=h, hero_kb=f"{size / 1e3:.0f}")
+
+
+def release_checksums(rel: GhRelease | None, offline: bool) -> Checksums | None:
+    if rel is None:
+        return None
+    asset = next((x for x in rel.assets if x.name == "SHA256SUMS"), None)
+    if asset is None:
+        return None
+    url = asset.browser_download_url
+    return cached(f"sha256sums-{rel.tag_name}.txt", offline, lambda: fetch(url, "*/*"), Checksums.parse)
+
+
+def render_downloads(rel: GhRelease | None, sums: Checksums | None) -> str:
     if not rel:
         return '<p>No release found. See <a href="https://github.com/obs-rust/obs-studio/releases">releases</a>.</p>'
+    if sums is None:
+        raise SystemExit(f"downloads: {rel.tag_name} has no SHA256SUMS asset")
     out: list[str] = []
     for group in DL_GROUPS:
-        os_name, arch = group.os_name, group.arch
         items: list[str] = []
         for opt in group.options:
-            suffix, label = opt.suffix, opt.label
-            a = next((a for a in rel.assets if a.name.endswith(suffix)), None)
-            if a:
-                items.append(f'<li><a href="{esc(a.browser_download_url)}">{esc(label)}'
-                             f'<span>{human_size(a.size)}</span></a></li>')
-        if not items:
-            items.append(f'<li><a href="{esc(rel.html_url)}">See release<span>→</span></a></li>')
-        out.append(f'<div class="plate card" data-os="{os_name.lower()}"><span class="tag">{esc(arch)}</span>'
-                   f'<div class="os">{os_name}</div><ul>{"".join(items)}</ul></div>')
+            asset = next((x for x in rel.assets if x.name.endswith(opt.suffix)), None)
+            if asset is None:
+                raise SystemExit(f"downloads: no asset in {rel.tag_name} ends with {opt.suffix!r}")
+            digest = sums.by_name.get(asset.name)
+            if digest is None:
+                raise SystemExit(f"downloads: {asset.name} has no SHA256SUMS line")
+            items.append(f'<li><a href="{esc(asset.browser_download_url)}">{esc(opt.label)}'
+                         f'<span>{human_size(asset.size)}</span></a>'
+                         f'<code class="sha" title="SHA-256 of {esc(asset.name)}">sha256 {digest}</code></li>')
+        out.append(f'<div class="plate card" data-os="{group.os_name.lower()}"><span class="tag">{esc(group.arch)}</span>'
+                   f'<div class="os">{group.os_name}</div><ul>{"".join(items)}</ul></div>')
     return "".join(out)
 
 
@@ -550,6 +585,7 @@ def main() -> None:
     if out.exists():
         shutil.rmtree(out)
     shutil.copytree(ROOT / "assets", out / "assets")
+    hero_img = hero_image(obs, out)
     for f in ["CNAME", ".nojekyll"]:
         if (ROOT / f).exists():
             shutil.copy(ROOT / f, out / f)
@@ -696,12 +732,12 @@ def main() -> None:
     mref, mnav = mcpmod.render_reference(surface.tools)
     hero = mcpmod.render_transcript(next(x for x in sessions if x.slug == "record-when-ready"))
     ctx = PageContext(
-        stats=stats, mcp=mstats,
+        stats=stats, mcp=mstats, hero=hero_img,
         release_tag=esc(rel.tag_name) if rel else "—",
         release_name=esc(rel.name or rel.tag_name) if rel else "releases",
         release_url=esc(rel.html_url) if rel else f"https://github.com/{REPO}/releases",
         release_date=(rel.published_at or "")[:10] if rel else "",
-        downloads=render_downloads(rel),
+        downloads=render_downloads(rel, release_checksums(rel, a.offline)),
         feature_cards=render_feature_cards(ledger.features),
         n_features=len(ledger.features), n_fixed=len(ledger.fixed),
         n_requests=len(proto.requests), n_events=len(proto.events), n_enums=len(proto.enums),

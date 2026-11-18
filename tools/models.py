@@ -479,7 +479,6 @@ class RepoStats:
     rust_mb: str
     c_mb: str
     cpp_mb: str
-    xo_title: str
     libobs_pct: str
     app_pct: str
     conv_commit: str
@@ -500,11 +499,41 @@ class McpStats:
 
 
 @dataclass(frozen=True, slots=True)
+class Checksums:
+    """A release's SHA256SUMS file: asset name -> lowercase hex digest."""
+
+    by_name: dict[str, str]
+
+    @staticmethod
+    def parse(data: bytes) -> "Checksums":
+        out: dict[str, str] = {}
+        for line in data.decode().splitlines():
+            if not line.strip():
+                continue
+            digest, _, name = line.partition("  ")
+            if len(digest) != 64 or not name:
+                raise ValueError(f"SHA256SUMS: bad line {line!r}")
+            out[name.lstrip("*").strip()] = digest.lower()
+        return Checksums(by_name=out)
+
+
+@dataclass(frozen=True, slots=True)
+class HeroImage:
+    """The upstream main-window screenshot, re-encoded for the hero."""
+
+    hero_src: str
+    hero_w: int
+    hero_h: int
+    hero_kb: str
+
+
+@dataclass(frozen=True, slots=True)
 class PageContext:
     """Every {{placeholder}} a page template may use. Nested stats are flattened by as_mapping()."""
 
     stats: RepoStats
     mcp: McpStats
+    hero: HeroImage
     release_tag: str
     release_name: str
     release_url: str

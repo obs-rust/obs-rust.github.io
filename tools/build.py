@@ -72,6 +72,8 @@ def repo_stats(offline: bool) -> dict:
     langs = cached("languages.json", offline, lambda: gh(f"repos/{REPO}/languages"))
     repo = cached("repo.json", offline, lambda: gh(f"repos/{REPO}"))
     rels = cached("releases.json", offline, lambda: gh(f"repos/{REPO}/releases?per_page=20"))
+    conv = cached("conversion.json", offline, lambda: json.loads(fetch(
+        f"https://raw.githubusercontent.com/{REPO}/leaderboard/conversion.json", "*/*")))
     total = sum(langs.values()) or 1
     pct = lambda k: round(100 * langs.get(k, 0) / total, 1)  # noqa: E731
     r, c, x = pct("Rust"), pct("C"), pct("C++")
@@ -81,6 +83,9 @@ def repo_stats(offline: bool) -> dict:
         "rust_mb": f"{langs.get('Rust', 0) / 1e6:.1f}", "c_mb": f"{langs.get('C', 0) / 1e6:.1f}",
         "cpp_mb": f"{langs.get('C++', 0) / 1e6:.1f}",
         "xo_title": "Rust has passed <em>C</em>" if r > c else "Rust is closing on <em>C</em>",
+        "libobs_pct": f"{conv['libobs']['all']['percent']:.1f}",
+        "app_pct": f"{conv['app']['percent']:.1f}",
+        "conv_commit": conv["commit"], "conv_date": conv["date"],
         "stars": repo.get("stargazers_count", 0), "forks": repo.get("forks_count", 0),
         "release": rel,
     }
@@ -547,13 +552,15 @@ def main() -> None:
     pages = []
     for tpl in sorted((ROOT / "src").rglob("*.html")):
         rel_path = tpl.relative_to(ROOT / "src")
-        dest = out / (rel_path if rel_path.name == "index.html" else rel_path.with_suffix("") / "index.html")
+        dest = out / (rel_path if rel_path.name in ("index.html", "404.html")
+                      else rel_path.with_suffix("") / "index.html")
         page_path = "/" + str(dest.parent.relative_to(out)).replace(".", "").strip("/")
         page_path = page_path.rstrip("/") + "/"
         dest.parent.mkdir(parents=True, exist_ok=True)
         # nav() emits {{stars}}, so render twice-safe: nav first then ctx
         dest.write_text(render(tpl.read_text(), ctx, page_path))
-        pages.append(page_path)
+        if rel_path.name != "404.html":
+            pages.append(page_path)
     for extra in ["/llms.txt", "/llms-full.txt"]:
         pages.append(extra)
     (out / "sitemap.xml").write_text(

@@ -15,7 +15,7 @@
 @media(max-width:940px){.hero .wrap{grid-template-columns:minmax(0,1fr);gap:18px}
   .hero .wrap>div:first-child{display:contents}
   .hero .eyebrow{order:1}.hero h1{order:2;margin-bottom:0}.hero .mon{order:3;padding:6px;margin:0 -16px}.hero .actions{order:4}.hero .lede{order:5}.hero .rel{order:6}}
-.caution{margin:18px 0 12px;padding:12px 14px;border:1px solid rgba(242,183,5,.5);border-left:4px solid var(--haz);border-radius:var(--r-ctl);background:rgba(242,183,5,.06);font-size:var(--t-ui)}
+.caution{margin:0 0 12px;padding:12px 14px;border:1px solid rgba(242,183,5,.5);border-left:4px solid var(--haz);border-radius:var(--r-ctl);background:rgba(242,183,5,.06);font-size:var(--t-ui)}
 .caution b{color:var(--haz);font:700 var(--t-label) var(--mono);letter-spacing:.14em;text-transform:uppercase;margin-right:8px}
 
 /* program monitor: the real main window, framed */
@@ -35,6 +35,13 @@
 .chan h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;font:600 var(--t-17) var(--mono)}
 .chan h3 b{font:800 var(--t-30) var(--stencil);text-transform:uppercase;color:var(--rust)}
 .chan h3 span{font-size:var(--t-13);color:var(--dim)}
+details.chan>summary,.older>summary{display:flex;align-items:baseline;gap:10px;list-style:none;cursor:pointer}
+details.chan>summary::-webkit-details-marker,.older>summary::-webkit-details-marker{display:none}
+details.chan>summary::before,.older>summary::before{content:"▸";color:var(--dim);font:var(--t-15) var(--mono);transition:transform .15s}
+details.chan[open]>summary::before,.older[open]>summary::before{transform:rotate(90deg)}
+details.chan>summary:hover h3 b{color:var(--rust-hi)}
+.older{margin-top:var(--s-3)}
+.older>summary{font:600 var(--t-13) var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fg2)}
 .dl{margin-top:var(--s-2)}
 .dl .card{padding:var(--s-3)}
 .dl .os{font:800 var(--t-30) var(--stencil);text-transform:uppercase}
@@ -87,10 +94,32 @@
 .tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:var(--s-3);counter-reset:t}
 .tiers div{padding:var(--s-3);border:1px solid var(--edge);margin-left:-1px;background:var(--plate);position:relative}
 .tiers div::before{counter-increment:t;content:"TIER " counter(t);font:700 var(--t-label) var(--mono);letter-spacing:.2em;color:var(--rust)}
-.tiers h3{margin:8px 0 6px;font-size:var(--t-19)}
+.tiers h4{margin:8px 0 6px;font:700 var(--t-19) var(--cond);letter-spacing:.03em;text-transform:uppercase;line-height:1.05}
+.how{margin-top:var(--s-4)}
+.how>summary{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 14px;list-style:none;cursor:pointer}
+.how>summary::-webkit-details-marker{display:none}
+.how>summary::before{content:"▸";color:var(--dim);font:var(--t-15) var(--mono);transition:transform .15s}
+.how[open]>summary{margin-bottom:var(--s-2)}
+.how[open]>summary::before{transform:rotate(90deg)}
+.how>summary .muted{font:600 var(--t-13) var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.how h3.sub{font:800 var(--t-30)/1 var(--stencil)}
+.how h3.sub em{font-style:normal;color:var(--rust)}
+.how>summary:hover h3.sub{color:var(--rust-hi)}
 .tiers p{color:var(--dim);font-size:var(--t-ui)}
 @media(max-width:900px){.tiers{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.tiers{grid-template-columns:1fr}.mon .bar .src{display:none}.bars div{padding:0 6px}}
+@media(max-width:560px){.tiers div{padding:var(--s-2)}.mon .bar .src{display:none}.bars div{padding:0 6px}}
+
+/* build with it: rows in one plate */
+.rows{margin-top:var(--s-3);display:flex;flex-direction:column}
+.rows>a{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:var(--s-2);align-items:center;padding:14px var(--s-3);color:var(--fg);border-top:1px solid var(--edge);transition:background .15s}
+.rows>a:first-child{border-top:0}
+.rows>a:hover{background:rgba(255,255,255,.03);color:var(--fg)}
+.rows h3{font-size:var(--t-19)}
+.rows p{color:var(--dim);font-size:var(--t-ui)}
+.rows .go{font:700 var(--t-label) var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--rust)}
+@media(min-width:1100px){.rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.rows>a:first-child{grid-column:span 2}
+  .rows>a:nth-child(n+2){border-top:1px solid var(--edge)}.rows>a:nth-child(2n+1):not(:first-child){border-left:1px solid var(--edge)}}
+@media(max-width:700px){.rows>a{grid-template-columns:40px minmax(0,1fr);padding:12px var(--s-2)}.rows .go{grid-column:2}}
 
 /* agent */
 .agent{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:var(--s-5);align-items:center}
@@ -118,7 +147,7 @@
       </div>
       <div class="rel"><span class="dot"></span> {{release_line}}</div>
     </div>
-    <figure class="mon">
+    <figure class="mon" data-object>
       <div class="bar"><span class="tally" aria-hidden="true"></span><span>Program · OBS Studio Rust</span><span class="src">AppImage test capture</span></div>
       <div class="screen">
         <img src="{{hero_src}}" width="{{hero_w}}" height="{{hero_h}}" alt="OBS Studio Rust's main window: Scenes and Sources docks with Mic, Camera and Screen sources, a colour-bar preview, the audio mixer, and a recording in progress." fetchpriority="high" decoding="async">
@@ -169,6 +198,17 @@
       <div class="plate card"><h3><span class="ico">py</span>Scripting</h3><p>The Lua and Python scripting APIs and the frontend API work as before. Your scripts and docks still run.</p></div>
       <div class="plate card"><h3><span class="ico">⇄</span>Profiles &amp; scenes</h3><p>On first start it copies upstream OBS's settings, profiles, scenes and plug-in settings into its own folder. The originals are left untouched.</p></div>
     </div>
+    <details class="how" id="how">
+    <summary><h3 class="sub">Every port starts <em>red</em></h3><span class="muted">the four tiers</span></summary>
+    <p class="lede">A port starts with a failing test and is finished when that test passes. Before the C version is deleted, the Rust replacement has to pass all four tiers:</p>
+    <div class="tiers">
+      <div><h4>Rust unit tests</h4><p>Fast, focused tests on the new Rust module itself.</p></div>
+      <div><h4>Unchanged C tests</h4><p>The original cmocka suite, unmodified, run against the Rust implementation.</p></div>
+      <div><h4>Differential</h4><p>The Rust and C versions run side by side on the same inputs, and the outputs are compared.</p></div>
+      <div><h4>Black-box protocol</h4><p>Real obs-websocket clients run against the whole app.</p></div>
+    </div>
+    <p class="muted aside">Read the <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/testing-policy.md">testing policy</a> and <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/coordination.md">coordination guide</a>.</p>
+    </details>
   </div>
 </section>
 
@@ -191,22 +231,7 @@
     <span class="eyebrow">Features ledger</span>
     <h2>What's <em>different</em></h2>
     <p class="lede">Every user-visible change from upstream gets a line in <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/features.md">docs/features.md</a>. Newest first:</p>
-    <div class="grid g3 feat">{{feature_cards}}</div>
-  </div>
-</section>
-
-<section id="how">
-  <div class="wrap">
-    <span class="eyebrow">How it's built</span>
-    <h2>Every port starts <em>red</em></h2>
-    <p class="lede">A port starts with a failing test and is finished when that test passes. Before the C version is deleted, the Rust replacement has to pass all four tiers:</p>
-    <div class="tiers">
-      <div><h3>Rust unit tests</h3><p>Fast, focused tests on the new Rust module itself.</p></div>
-      <div><h3>Unchanged C tests</h3><p>The original cmocka suite, unmodified, run against the Rust implementation.</p></div>
-      <div><h3>Differential</h3><p>The Rust and C versions run side by side on the same inputs, and the outputs are compared.</p></div>
-      <div><h3>Black-box protocol</h3><p>Real obs-websocket clients run against the whole app.</p></div>
-    </div>
-    <p class="muted aside">Read the <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/testing-policy.md">testing policy</a> and <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/rust-port/coordination.md">coordination guide</a>.</p>
+    {{feature_cards}}
   </div>
 </section>
 
@@ -223,10 +248,12 @@
         <a class="btn ghost" href="/ai/">AI corpus</a>
       </div>
     </div>
+    <div>
     <p class="caution"><b>Caution</b> <code>--dangerously-skip-permissions</code> lets the agent run any command without asking. Use it only in a disposable VM or container with no credentials you would not hand to it.</p>
     <div class="term"><div class="tb"><i></i><i></i><i></i></div><pre><span class="c"># one worker, one issue, one PR — on a 10-minute loop</span>
 <span class="k">PROMPT</span>=<span class="s">"/loop 10m https://raw.githubusercontent.com/obs-rust/obs-studio/refs/heads/master/.claude/skills/obs-worker/SKILL.md"</span>
 <span class="n">claude</span> --dangerously-skip-permissions <span class="s">"$PROMPT"</span></pre></div>
+    </div>
   </div>
 </section>
 
@@ -234,12 +261,12 @@
   <div class="wrap">
     <span class="eyebrow">For builders</span>
     <h2>Drive OBS from <em>anything</em></h2>
-    <div class="grid g3">
-      <a class="plate card" href="/websocket/"><span class="ico">WS</span><h3>WebSocket API</h3><p>All {{n_requests}} requests, {{n_events}} events and every enum, searchable. You can call your own OBS from the page.</p><span class="go">Open reference →</span></a>
-      <a class="plate card" href="/mcp/"><span class="ico">MCP</span><h3>MCP server</h3><p>Give an AI agent OBS: {{n_tools}} typed tools for scenes, sources, recording, streaming, screenshots and waits.</p><span class="go">Plug in an agent →</span></a>
-      <a class="plate card" href="/examples/"><span class="ico">{ }</span><h3>Examples</h3><p>Rust, Python, JavaScript and raw-socket clients, plus plugin and script starters.</p><span class="go">Copy &amp; run →</span></a>
-      <a class="plate card" href="/ai/"><span class="ico">AI</span><h3>LLM corpus</h3><p>{{corpus_docs}} documents in {{corpus_chunks}} searchable chunks, also served as llms.txt and llms-full.txt for agents.</p><span class="go">Search corpus →</span></a>
-      <a class="plate card" href="https://github.com/obs-rust/obs-studio/blob/master/docs/sphinx/index.rst"><span class="ico">C</span><h3>libobs reference</h3><p>The C API reference for plugin authors: sources, outputs, encoders, graphics.</p><span class="go">Read →</span></a>
+    <div class="plate rows">
+      <a href="/websocket/"><span class="ico">WS</span><span class="bt"><h3>WebSocket API</h3><p>All {{n_requests}} requests, {{n_events}} events and every enum, searchable. You can call your own OBS from the page.</p></span><span class="go">Open reference →</span></a>
+      <a href="/mcp/"><span class="ico">MCP</span><span class="bt"><h3>MCP server</h3><p>Give an AI agent OBS: {{n_tools}} typed tools for scenes, sources, recording, streaming, screenshots and waits.</p></span><span class="go">Plug in an agent →</span></a>
+      <a href="/examples/"><span class="ico">{ }</span><span class="bt"><h3>Examples</h3><p>Rust, Python, JavaScript and raw-socket clients, plus plugin and script starters.</p></span><span class="go">Copy &amp; run →</span></a>
+      <a href="/ai/"><span class="ico">AI</span><span class="bt"><h3>LLM corpus</h3><p>{{corpus_docs}} documents in {{corpus_chunks}} searchable chunks, also served as llms.txt and llms-full.txt for agents.</p></span><span class="go">Search corpus →</span></a>
+      <a href="https://github.com/obs-rust/obs-studio/blob/master/docs/sphinx/index.rst"><span class="ico">C</span><span class="bt"><h3>libobs reference</h3><p>The C API reference for plugin authors: sources, outputs, encoders, graphics.</p></span><span class="go">Read →</span></a>
     </div>
   </div>
 </section>

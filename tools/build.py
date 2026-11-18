@@ -245,9 +245,13 @@ def render_downloads(chans: list[Channel]) -> str:
                          f'<div class="os">{group.os_name}</div><ul>{items}</ul>'
                          f'<p class="verify">Verify: <code>{esc(VERIFY[group.os_name])}</code> must equal the SHA-256.</p></div>')
         date = (ch.rel.published_at or "")[:10]
-        out.append(f'<div class="chan" id="{ch.name.lower()}"><h3><b>{ch.name}</b> <a href="{esc(ch.rel.html_url)}">'
-                   f'{esc(ch.rel.name or ch.rel.tag_name)}</a> <span>{date}</span></h3><p class="muted">{esc(ch.note)}</p>'
-                   f'<div class="grid g3 dl">{"".join(cards)}</div></div>')
+        title = (f'<b>{ch.name}</b> <a href="{esc(ch.rel.html_url)}">{esc(ch.rel.name or ch.rel.tag_name)}</a> '
+                 f'<span>{date}</span>')
+        body = f'<p class="muted">{esc(ch.note)}</p><div class="grid g3 dl">{"".join(cards)}</div>'
+        if ch.name == "Stable":
+            out.append(f'<div class="chan" id="{ch.name.lower()}"><h3>{title}</h3>{body}</div>')
+        else:  # only the stable files stay open; the others are one click away and present with JS off
+            out.append(f'<details class="chan" id="{ch.name.lower()}"><summary><h3>{title}</h3></summary>{body}</details>')
     return "".join(out)
 
 
@@ -333,7 +337,8 @@ def parse_ledger(text: str) -> Ledger:
     return Ledger(features=feats, fixed=fixed)
 
 
-def render_feature_cards(feats: list[Feature], n: int = 9) -> str:
+def render_feature_cards(feats: list[Feature], n: int = 9, shown: int = 3) -> str:
+    """The newest `shown` ledger entries as a card row; the rest of the newest `n` close under a summary."""
     out: list[str] = []
     for f in sorted(feats, key=lambda f: f.date, reverse=True)[:n]:
         name = md_inline(f.name.rstrip("."))
@@ -345,7 +350,10 @@ def render_feature_cards(feats: list[Feature], n: int = 9) -> str:
         out.append(f'<a class="plate card" href="{href}"><h3>{name}</h3><p>{desc}</p>'
                    f'<div class="m"><span class="tag rust">{esc(f.area)}</span>'
                    f'<span class="tag">{esc(f.platforms)}</span><span>{esc(f.date)}</span></div></a>')
-    return "".join(out)
+    older = "".join(out[shown:])
+    return (f'<div class="grid g3 feat">{"".join(out[:shown])}</div>'
+            + (f'<details class="older"><summary>{len(out) - shown} older changes</summary>'
+               f'<div class="grid g3 feat">{older}</div></details>' if older else ""))
 
 
 # ---------------------------------------------------------------- corpus
@@ -521,40 +529,58 @@ def example_message(r: WsRequest) -> str:
     return json.dumps(msg.model_dump(mode="json", exclude_none=True), indent=2)
 
 
+def one_line(s: str, limit: int = 140) -> str:
+    """The first sentence of a description as plain text, for an entry's summary line."""
+    t = re.sub(r"`([^`]+)`", r"\1", s).split("\n", 1)[0].strip()
+    m = re.match(r"(.+?[.!?])(\s|$)", t)
+    t = m.group(1) if m else t
+    return t if len(t) <= limit else t[:limit - 1].rsplit(" ", 1)[0] + "…"
+
+
+def ws_entry(name: str, kind: str, cat: str, search: str, tags: str, line: str, body: str) -> str:
+    """One closed reference entry: the summary carries the anchor, the name, its tags and one line."""
+    return (f'<details class="it" data-kind="{kind}" data-cat="{esc(cat)}" data-search="{esc(search)}">'
+            f'<summary id="{name}"><span class="nm">{name}</span>{tags}<span class="sd">{esc(line)}</span></summary>'
+            f'<div class="bd">{body}</div></details>')
+
+
 def render_ws_items(p: WsProtocol) -> tuple[str, str]:
     cats = sorted({r.category for r in p.requests} | {e.category for e in p.events})
     items: list[str] = []
+    dep = '<span class="tag haz">deprecated</span>'
     for r in p.requests:
         rid = r.requestType
         ex = example_message(r)
-        items.append(
-            f'<article class="it" id="{rid}" data-kind="request" data-cat="{esc(r.category)}" data-search="{esc((rid + " " + r.description).lower())}">'
-            f'<header><a class="nm" href="#{rid}">{rid}</a><span class="tag cu">request</span>'
-            f'<span class="tag">{esc(r.category)}</span><span class="tag">v{esc(r.initialVersion)}</span>'
-            f'{"<span class=\"tag haz\">deprecated</span>" if r.deprecated else ""}'
+        items.append(ws_entry(
+            rid, "request", r.category, (rid + " " + r.description).lower(),
+            f'<span class="tag cu">request</span><span class="tag">{esc(r.category)}</span>{dep if r.deprecated else ""}',
+            one_line(r.description),
+            f'<div class="eh"><span class="tag">v{esc(r.initialVersion)}</span>'
             f'<span class="cx" title="complexity">{"●" * r.complexity}{"○" * (5 - r.complexity)}</span>'
-            f'<button class="try" data-req="{rid}" title="Load into the live console">Try ▸</button></header>'
+            f'<a class="pl" href="#{rid}">#{rid}</a>'
+            f'<button class="try" data-req="{rid}" title="Load into the live console">Try ▸</button></div>'
             f'<p>{md_desc(r.description)}</p>'
             f'{fields_table(r.requestFields, "Request fields")}{fields_table(r.responseFields, "Response fields")}'
-            f'<details><summary>Example message</summary><pre>{esc(ex)}</pre></details></article>')
+            f'<details class="exm"><summary>Example message</summary><pre>{esc(ex)}</pre></details>'))
     for e in p.events:
         eid = e.eventType
-        items.append(
-            f'<article class="it" id="{eid}" data-kind="event" data-cat="{esc(e.category)}" data-search="{esc((eid + " " + e.description).lower())}">'
-            f'<header><a class="nm" href="#{eid}">{eid}</a><span class="tag rust">event</span>'
-            f'<span class="tag">{esc(e.category)}</span><span class="tag">{esc(e.eventSubscription)}</span>'
-            f'<span class="tag">v{esc(e.initialVersion)}</span>'
-            f'{"<span class=\"tag haz\">deprecated</span>" if e.deprecated else ""}</header>'
-            f'<p>{md_desc(e.description)}</p>{fields_table(e.dataFields, "Data fields")}</article>')
+        items.append(ws_entry(
+            eid, "event", e.category, (eid + " " + e.description).lower(),
+            f'<span class="tag rust">event</span><span class="tag">{esc(e.category)}</span>{dep if e.deprecated else ""}',
+            one_line(e.description),
+            f'<div class="eh"><span class="tag">{esc(e.eventSubscription)}</span><span class="tag">v{esc(e.initialVersion)}</span>'
+            f'<a class="pl" href="#{eid}">#{eid}</a></div>'
+            f'<p>{md_desc(e.description)}</p>{fields_table(e.dataFields, "Data fields")}'))
     for en in p.enums:
         nid = en.enumType
         rows = "".join(f'<tr><td><code>{esc(i.enumIdentifier)}</code></td><td class="ty">{esc(str(i.enumValue))}</td>'
                        f'<td>{md_desc(i.description)}</td></tr>' for i in en.enumIdentifiers)
-        items.append(
-            f'<article class="it" id="{nid}" data-kind="enum" data-cat="enums" data-search="{esc(nid.lower())}">'
-            f'<header><a class="nm" href="#{nid}">{nid}</a><span class="tag haz">enum</span>'
-            f'<span class="tag">{len(en.enumIdentifiers)} values</span></header>'
-            f'<div class="tw"><table class="ft"><tbody>{rows}</tbody></table></div></article>')
+        items.append(ws_entry(
+            nid, "enum", "enums", nid.lower(), '<span class="tag haz">enum</span>',
+            f"{len(en.enumIdentifiers)} values: " + ", ".join(i.enumIdentifier for i in en.enumIdentifiers[:4])
+            + (", …" if len(en.enumIdentifiers) > 4 else ""),
+            f'<div class="eh"><a class="pl" href="#{nid}">#{nid}</a></div>'
+            f'<div class="tw"><table class="ft"><tbody>{rows}</tbody></table></div>'))
     nav: list[str] = []
     for c in cats:
         reqs = [r.requestType for r in p.requests if r.category == c]
@@ -849,7 +875,7 @@ def main() -> None:
         mcp_sessions=mcpmod.render_sessions(sessions), mcp_hero_tx=hero,
         mcp_json_pretty=esc(json.dumps(surface.mcp_json.model_dump(mode="json", exclude_none=True),
                                        separators=(",", ":"))),
-        mcp_resources="".join(f'<article class="tool"><header><span class="nm">{esc(r.uri)}</span>'
+        mcp_resources="".join(f'<article class="res"><header><span class="nm">{esc(r.uri)}</span>'
                               f'<span class="tag">{esc(r.mimeType)}</span></header><p>{esc(r.description)}</p></article>'
                               for r in surface.resources),
     )

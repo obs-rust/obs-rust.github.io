@@ -16,25 +16,36 @@
 .filter input{flex:1;min-width:220px}
 .chip{padding:9px 14px;border:1px solid var(--edge2);border-radius:var(--r-ctl);background:transparent;color:var(--fg2);font:600 var(--t-label) var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 .chip[aria-pressed=true]{background:var(--rust);color:#120700;border-color:var(--rust)}
-.it{padding:var(--s-3) 0;border-bottom:1px solid var(--edge);scroll-margin-top:130px}
+/* entries: closed by default; the summary carries the anchor, the name, its tags and one line */
+.it{border-bottom:1px solid var(--edge)}
 .it.hide{display:none}
-.it header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
-.it .nm{font:700 var(--t-19) var(--mono);color:var(--fg);margin-right:6px;overflow-wrap:anywhere;min-width:0}
-.it .nm:hover{color:var(--rust-hi)}
-.it:target{background:linear-gradient(90deg,rgba(232,99,26,.08),transparent 60%);box-shadow:inset 3px 0 0 var(--rust);padding-left:14px}
+.it>summary{display:flex;align-items:baseline;gap:8px;padding:7px 4px;list-style:none;scroll-margin-top:130px;min-width:0}
+.it>summary::-webkit-details-marker{display:none}
+.it>summary::before{content:"▸";flex:none;width:12px;color:var(--dim);font:var(--t-12) var(--mono);transition:transform .15s}
+.it[open]>summary::before{transform:rotate(90deg)}
+.it>summary:hover{background:rgba(255,255,255,.03)}
+.it>summary .tag{flex:none}
+.it .nm{flex:none;font:700 var(--t-15) var(--mono);color:var(--fg);overflow-wrap:anywhere;min-width:0}
+.it>summary:hover .nm{color:var(--rust-hi)}
+.it .sd{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim);font-size:var(--t-15)}
+.it:has(>summary:target){background:linear-gradient(90deg,rgba(232,99,26,.08),transparent 60%);box-shadow:inset 3px 0 0 var(--rust)}
+.it .bd{padding:4px 4px var(--s-3) 24px}
+.it .eh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.it .pl{font:500 var(--t-13) var(--mono);color:var(--dim);overflow-wrap:anywhere}
 .it p{color:var(--fg2)}
+@media(max-width:700px){.it>summary{flex-wrap:wrap}.it .sd{flex-basis:100%;padding-left:20px}}
 .it h3{font:700 var(--t-label) var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:14px 0 6px}
 .cx{font-size:var(--t-12);color:var(--rust);letter-spacing:2px}
 .try{margin-left:auto;padding:5px 10px;min-height:26px;border:1px solid var(--cu);color:var(--cu-hi);background:transparent;border-radius:var(--r-ctl);font:700 var(--t-label) var(--mono);cursor:pointer}
 .try:hover{background:var(--cu);color:#000}
 .restr{font:500 var(--t-label) var(--mono);color:var(--dim);margin-top:3px}
 details>summary{cursor:pointer}
-.it details{margin-top:10px}.it details summary{font:600 var(--t-label) var(--mono);color:var(--dim)}
-.it details pre{margin-top:8px}
+.it .exm{margin-top:10px}.it .exm summary{font:600 var(--t-label) var(--mono);color:var(--dim)}
+.it .exm pre{margin-top:8px}
 @media(max-width:900px){.ws{grid-template-columns:minmax(0,1fr)}.side{display:none}}
 
 /* console */
-.con{margin-top:var(--s-5);padding:var(--s-3);display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.con{margin-top:var(--s-4);padding:var(--s-3);display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .con .con-h{display:flex;align-items:center;gap:10px;font:700 var(--t-17) var(--mono);text-transform:none;letter-spacing:0;margin:0}
 .con .st{font:600 var(--t-label) var(--mono);padding:3px 8px;border-radius:var(--r-ctl);border:1px solid var(--edge2);color:var(--dim)}
 .con .st.ok{color:#000;background:var(--cu-hi);border-color:var(--cu-hi)}
@@ -46,6 +57,8 @@ details>summary{cursor:pointer}
 .log .o{color:#ffb98c}.log .i{color:#9fe0c8}.log .e{color:#ff8080}.log .m{color:var(--dim)}
 .con label{font:600 var(--t-label) var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 @media(max-width:900px){.con{grid-template-columns:minmax(0,1fr)}}
+.ws-meta{margin-top:var(--s-4)}
+.ws-meta .meta{display:flex;flex-wrap:wrap;gap:8px}
 .proto .card{padding:16px 18px;gap:4px}
 .proto b{font:700 var(--t-30) var(--stencil);color:var(--rust)}
 </style>
@@ -53,20 +66,13 @@ details>summary{cursor:pointer}
 <body>
 {{nav:websocket}}
 <main id="main" class="wrap">
-  <div class="phead start">
+  <div class="start">
     <span class="eyebrow">obs-websocket · protocol v5 · rpcVersion 1</span>
     <h1>WebSocket <em>API</em></h1>
     <p class="lede">obs-studio-rust ships the upstream obs-websocket plugin unmodified as its compatibility check, so clients written for obs-websocket v5 (OBS 28 and later) are expected to work against it unchanged. This reference is generated from <a href="https://github.com/obs-rust/obs-websocket/blob/{{ws_sha}}/docs/generated/protocol.json">protocol.json</a> at the exact commit obs-studio ships.</p>
-    <div class="meta"><span class="tag cu">{{n_requests}} requests</span><span class="tag rust">{{n_events}} events</span><span class="tag haz">{{n_enums}} enums</span><span class="tag">obs-websocket@{{ws_sha_short}}</span><a class="tag" href="/websocket/protocol.json">protocol.json ↓</a><a class="tag" href="/ai/docs/obs-websocket-docs-generated-protocol.md">protocol.md ↓</a></div>
-    <div class="grid g4 proto">
-      <div class="plate card"><b>op 0 → 1</b><span class="muted">Hello → Identify (auth), then Identified (op 2)</span></div>
-      <div class="plate card"><b>op 6 → 7</b><span class="muted">Request → RequestResponse, matched by requestId</span></div>
-      <div class="plate card"><b>op 5</b><span class="muted">Event, filtered by eventSubscriptions bitmask</span></div>
-      <div class="plate card"><b>op 8 → 9</b><span class="muted">RequestBatch → RequestBatchResponse</span></div>
-    </div>
   </div>
 
-  <section class="plate con" id="console">
+  <section class="plate con" id="console" data-object>
     <div>
       <h2 class="con-h">Live console <span class="st" id="st">disconnected</span></h2>
       <p class="muted intro">Connect straight to your own OBS: enable it under <b>Tools → WebSocket Server Settings</b>. Everything stays between this tab and your machine. The password only feeds the SHA-256 challenge and is never stored.</p>
@@ -77,6 +83,16 @@ details>summary{cursor:pointer}
     </div>
     <div><label>Traffic</label><div class="log" id="log" aria-live="polite"><span class="m">Press Connect. Click "Try ▸" on any request below to load it here.</span></div></div>
   </section>
+
+  <div class="ws-meta">
+    <div class="meta"><span class="tag cu">{{n_requests}} requests</span><span class="tag rust">{{n_events}} events</span><span class="tag haz">{{n_enums}} enums</span><span class="tag">obs-websocket@{{ws_sha_short}}</span><a class="tag" href="/websocket/protocol.json">protocol.json ↓</a><a class="tag" href="/ai/docs/obs-websocket-docs-generated-protocol.md">protocol.md ↓</a></div>
+    <div class="grid g4 proto">
+      <div class="plate card"><b>op 0 → 1</b><span class="muted">Hello → Identify (auth), then Identified (op 2)</span></div>
+      <div class="plate card"><b>op 6 → 7</b><span class="muted">Request → RequestResponse, matched by requestId</span></div>
+      <div class="plate card"><b>op 5</b><span class="muted">Event, filtered by eventSubscriptions bitmask</span></div>
+      <div class="plate card"><b>op 8 → 9</b><span class="muted">RequestBatch → RequestBatchResponse</span></div>
+    </div>
+  </div>
 
   <div class="ws">
     <aside class="side" aria-label="API index">{{ws_nav}}</aside>
@@ -100,7 +116,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const items=$$('.it'),q=$('#q'),count=$('#count');let kind='all';
 function apply(){const t=q.value.trim().toLowerCase().split(/\s+/).filter(Boolean);let n=0;
   for(const it of items){const ok=(kind==='all'||it.dataset.kind===kind)&&t.every(w=>it.dataset.search.includes(w)||it.dataset.cat.includes(w));
-    it.classList.toggle('hide',!ok);if(ok)n++;const a=document.querySelector(`.side a[data-for="${it.id}"]`);if(a)a.classList.toggle('hide',!ok);}
+    it.classList.toggle('hide',!ok);if(ok)n++;const a=document.querySelector(`.side a[data-for="${it.firstElementChild.id}"]`);if(a)a.classList.toggle('hide',!ok);}
   count.textContent=`${n} / ${items.length}`;}
 q.addEventListener('input',apply);
 $$('.chip').forEach(c=>c.addEventListener('click',()=>{kind=c.dataset.k;$$('.chip').forEach(x=>x.setAttribute('aria-pressed',x===c));apply();}));
@@ -125,9 +141,13 @@ btn.onclick=()=>{if(ws){ws.close();return;}log.textContent='';
 send.onclick=()=>{if(!ws)return;let o;try{o=JSON.parse(msg.value);}catch(e){line('e','invalid JSON: '+e.message);return;}
   if(o.op===6&&o.d){o.d.requestId=String(++rid);msg.value=JSON.stringify(o);}line('o','→ '+JSON.stringify(o));ws.send(JSON.stringify(o));};
 msg.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))send.click();});
-$$('.try').forEach(b=>b.addEventListener('click',()=>{const it=b.closest('.it');const pre=it.querySelector('details pre');
+$$('.try').forEach(b=>b.addEventListener('click',()=>{const it=b.closest('.it');const pre=it.querySelector('.exm pre');
   msg.value=pre?JSON.stringify(JSON.parse(pre.textContent)):JSON.stringify({op:6,d:{requestType:b.dataset.req,requestId:'1'}});
   $('#console').scrollIntoView({behavior:'smooth'});msg.focus();}));
+// a #Name link opens its entry, on load, on hashchange and when the same link is followed again
+const openHash=()=>{const t=location.hash.length>1&&document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  const d=t&&t.closest('details.it');if(d&&!d.open){d.open=true;t.scrollIntoView();}};
+addEventListener("hashchange",openHash);addEventListener('click',e=>{if(e.target.closest('a[href^="#"]'))setTimeout(openHash);});openHash();
 })();
 </script>
 </body>

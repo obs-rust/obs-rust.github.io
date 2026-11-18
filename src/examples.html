@@ -22,7 +22,7 @@ table.list{margin-top:10px}
   <div class="phead start">
     <span class="eyebrow">Copy · paste · stream</span>
     <h1>Examples</h1>
-    <p class="lede">Working starting points for everything that talks to OBS: WebSocket clients, agents over MCP, scripts and native plugins. Each one runs unchanged against upstream OBS Studio and obs-studio-rust; that compatibility is the point.</p>
+    <p class="lede">Working starting points for everything that talks to OBS: WebSocket clients, agents over MCP, scripts and native plugins.</p>
   </div>
   <div class="ex">
     <nav class="toc" aria-label="On this page">
@@ -31,10 +31,9 @@ table.list{margin-top:10px}
       <a href="#plugins">Native plugins</a><a href="#libs">Client libraries</a>
     </nav>
     <div>
-<div class="blk" id="hello" data-object>
+<div class="blk" id="hello">
   <span class="eyebrow">01</span><h2>Hello, <em>OBS</em></h2>
-  <p>Connect, authenticate, read the version and switch scenes. Enable the server first under <b>Tools → WebSocket Server Settings</b> (default port 4455).</p>
-  <div class="tabset">
+  <div class="tabset" data-object>
     <div class="tabs" role="tablist"><button role="tab" aria-selected="true">Rust</button><button role="tab" aria-selected="false">Python</button><button role="tab" aria-selected="false">JavaScript</button></div>
     <div class="pane on"><div class="dep">cargo add obws tokio --features tokio/full</div><pre><span class="k">use</span> obws::Client;
 
@@ -74,6 +73,7 @@ scenes.forEach(s =&gt; console.log(<span class="s">'scene:'</span>, s.sceneName)
 
 <span class="k">await</span> obs.call(<span class="s">'SetCurrentProgramScene'</span>, { sceneName: <span class="s">'BRB'</span> });</pre></div>
   </div>
+  <p>Connect, authenticate, read the version and switch scenes. Enable the server first under <b>Tools → WebSocket Server Settings</b> (default port 4455).</p>
   <p class="muted aside">Every request name and field is in the <a href="/websocket/">API reference</a>, and you can try one live from that page before you write any code.</p>
 </div>
 

@@ -392,9 +392,8 @@ def head(title: str, desc: str, path: str = "/") -> str:
 <meta name="theme-color" content="#0b0c0d">
 <link rel="icon" href="/assets/obs-rust-badge.svg" type="image/svg+xml">
 <link rel="alternate" type="text/plain" title="llms.txt" href="/llms.txt">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@800;900&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" href="/assets/fonts/big-shoulders-stencil-display.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/fonts.css">
 <link rel="stylesheet" href="/assets/site.css">"""
 
 
@@ -523,7 +522,7 @@ def main() -> None:
             "ABI, the obs-websocket v5 protocol and the plugin/scripting APIs compatible. Source: "
             f"https://github.com/{REPO}. Beta downloads: https://github.com/{REPO}/releases.", "",
             f"Generated {now:%Y-%m-%d} from obs-studio@{obs_sha[:9]} and obs-websocket@{ws_sha[:9]}. "
-            f"The whole corpus in one file: {SITE}/llms-full.txt. Chunked JSON for retrieval: {SITE}/ai/corpus.json "
+            f"Core bundle for one context window: {SITE}/llms-ctx.txt. The whole corpus in one file: {SITE}/llms-full.txt. Chunked JSON for retrieval: {SITE}/ai/corpus.json "
             f"(fields: id, doc, group, title, heading, source, text). Raw protocol: {SITE}/websocket/protocol.json.", ""]
     for g, label in groups.items():
         llms.append(f"## {label}")
@@ -545,6 +544,29 @@ def main() -> None:
         full.append(d["text"].strip())
     (out / "llms-full.txt").write_text("\n".join(full) + "\n")
 
+    # llms-ctx.txt: the core bundle that fits a context window (DESIGN.md §7, budget 300 KB)
+    core = ["README.md", "AGENTS.md", "docs/rust-port/mcp.md", "docs/rust-port/control-api.md",
+            "mcp/reference.md", "docs/rust-port/coordination.md", "docs/rust-port/testing-policy.md",
+            "obs-websocket/reference.md"]
+    by_path = {d["path"]: d for d in docs}
+    missing_core = [c for c in core if c not in by_path]
+    if missing_core:
+        raise SystemExit(f"llms-ctx: core docs missing: {missing_core}")
+    rel0 = stats["release"]
+    ctx_txt = [llms[0], "", llms[2], "",
+               f"Core context bundle, generated {now:%Y-%m-%d} from obs-studio@{obs_sha[:9]}. "
+               f"Everything else: {SITE}/llms.txt (index) and {SITE}/llms-full.txt (all docs).", "",
+               "## Download", f"Latest release: {rel0['tag_name'] if rel0 else 'none'} "
+               f"({rel0['html_url'] if rel0 else f'https://github.com/{REPO}/releases'}).",
+               "Assets: " + ", ".join(a["name"] for a in (rel0 or {}).get("assets", [])), ""]
+    for c in core:
+        d = by_path[c]
+        ctx_txt += [f"\n\n<!-- ===== {d['path']} | {d['url']} ===== -->\n", d["text"].strip()]
+    (out / "llms-ctx.txt").write_text("\n".join(ctx_txt) + "\n")
+    ctx_kb = (out / "llms-ctx.txt").stat().st_size / 1024
+    if ctx_kb > 300:
+        raise SystemExit(f"llms-ctx.txt is {ctx_kb:.0f} KB, over the 300 KB budget")
+
     ws_items, ws_nav = render_ws_items(proto)
     mstats = mcpmod.write_artifacts(out, surface, sessions, obs_sha, now.isoformat(timespec="seconds"),
                                     ROOT / "tools" / "vendor")
@@ -564,6 +586,11 @@ def main() -> None:
         "n_requests": len(proto["requests"]), "n_events": len(proto["events"]), "n_enums": len(proto["enums"]),
         "corpus_docs": len(docs), "corpus_chunks": len(chunks),
         "corpus_mb": f"{(out / 'llms-full.txt').stat().st_size / 1e6:.1f}",
+        "ctx_kb": f"{ctx_kb:.0f}",
+        "ai_doc_list": "".join(
+            f'<h4>{esc(groups.get(g, g))}</h4>' + "".join(
+                f'<a href="{d["site_url"]}" title="{esc(d["path"])}">{esc(d["title"])}</a>'
+                for d in docs if d["group"] == g) for g in groups),
         "build_date": f"{now:%Y-%m-%d}", "obs_sha": obs_sha, "obs_sha_short": obs_sha[:9],
         "ws_sha": ws_sha, "ws_sha_short": ws_sha[:9],
         "ws_items": ws_items, "ws_nav": ws_nav,
@@ -586,7 +613,7 @@ def main() -> None:
         dest.write_text(render(tpl.read_text(), ctx, page_path))
         if rel_path.name != "404.html":
             pages.append(page_path)
-    for extra in ["/llms.txt", "/llms-full.txt", "/mcp/schema.json", "/mcp/index.md"]:
+    for extra in ["/llms.txt", "/llms-ctx.txt", "/llms-full.txt", "/mcp/schema.json", "/mcp/index.md"]:
         pages.append(extra)
     (out / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'

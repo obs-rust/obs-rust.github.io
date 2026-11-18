@@ -4,7 +4,7 @@
   --fg:#ece8e1;--fg2:#c9c5bd;--dim:#8e949a;--rust:#e8631a;--rust-hi:#ff8a3d;--rust-lo:#a8430c;
   --cu:#3fa58a;--cu-hi:#62d1b1;--haz:#f2b705;--c:#8a96a3;--cpp:#5d6b7a;--red:#ff4040;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --cond:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --cond:"Barlow","Arial Narrow",system-ui,sans-serif;
   --sans:"Barlow","Segoe UI",system-ui,sans-serif;
   --stencil:"Big Shoulders Stencil Display","Barlow Condensed",sans-serif;
   --r:4px;--max:1180px;

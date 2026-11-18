@@ -46,6 +46,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: uv run tools/build.py --obs-studio .obs-studio --out _site
+      - name: Check site
+        run: uv run tools/check.py _site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

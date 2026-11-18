@@ -4,16 +4,20 @@
 {{head:OBS Studio Rust — the OBS you know, rebuilt in Rust|An independent, hybrid Rust/C/C++ rewrite of OBS Studio. Same libobs C ABI, same obs-websocket v5 protocol, same plugins, plus {{n_fixed}} upstream bugs fixed. Beta downloads for Windows, macOS and Linux.}}
 <style>
 /* hero */
-.hero{position:relative;padding:72px 0 40px}
-.hero .wrap{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:56px;align-items:center}
-.hero h1{font:900 clamp(52px,8.4vw,112px)/.86 var(--stencil);text-transform:uppercase;letter-spacing:.005em;margin:6px 0 22px}
+.hero{position:relative;padding:44px 0 40px}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,.74fr) minmax(0,1.26fr);gap:40px;align-items:center}
+.hero h1{font:900 clamp(38px,5.2vw,72px)/.9 var(--stencil);text-transform:uppercase;letter-spacing:.005em;margin:6px 0 22px}
 .hero h1 .row{display:block}
 .hero h1 .out{color:#5d646a}
 .hero .lede{margin-bottom:28px}
 .hero .cta{display:flex;flex-wrap:wrap;gap:12px}
 .hero .rel{margin-top:22px;font:500 13px var(--mono);color:var(--dim);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--cu-hi);box-shadow:0 0 10px var(--cu-hi);display:inline-block}
-@media(max-width:940px){.hero .wrap{grid-template-columns:minmax(0,1fr)}.hero{padding-top:48px}}
+@media(max-width:940px){.hero .wrap{grid-template-columns:minmax(0,1fr);gap:18px}.hero{padding-top:24px}
+  .hero .wrap>div:first-child{display:contents}
+  .hero .eyebrow{order:1}.hero h1{order:2;margin-bottom:0}.hero .mon{order:3;padding:6px;margin:0 -16px}.hero .lede{order:4}.hero .cta{order:5}.hero .rel{order:6}}
+.caution{margin:18px 0 12px;padding:12px 14px;border:1px solid rgba(242,183,5,.5);border-left:4px solid var(--haz);border-radius:4px;background:rgba(242,183,5,.06);font-size:15px}
+.caution b{color:var(--haz);font:700 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;margin-right:8px}
 
 /* program monitor: the real main window, framed */
 .mon{margin:0;position:relative;padding:12px;border-radius:10px;background:linear-gradient(180deg,#2a2e31,#17191b);border:1px solid var(--edge2);box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px #000,inset 0 1px 0 rgba(255,255,255,.08)}
@@ -108,11 +112,11 @@
 <section class="hero" style="padding-top:72px">
   <div class="wrap">
     <div>
-      <span class="eyebrow">obs-studio-rust · public beta</span>
+      <span class="eyebrow">obs-studio-rust · stable {{cta_version}}</span>
       <h1><span class="row">The OBS</span><span class="row out">you know.</span><span class="row"><em>Rebuilt</em> in Rust.</span></h1>
       <p class="lede">An independent rewrite of OBS Studio, one module at a time. The libobs C ABI, the obs-websocket v5 protocol and your plugins, scenes and profiles keep working, and {{n_fixed}} upstream bugs are already fixed.</p>
       <div class="cta">
-        <a class="btn primary" href="#download">Download beta ↓</a>
+        <a class="btn primary" href="#download">Download {{cta_version}} ↓</a>
         <a class="btn" href="https://github.com/obs-rust/obs-studio">★ {{stars}} on GitHub</a>
         <a class="btn ghost" href="/websocket/">WebSocket API</a>
       </div>
@@ -147,7 +151,7 @@
         <div class="o" style="flex:{{other_pct}}">other</div>
       </div>
       <div class="legend"><span><b>{{rust_mb}} MB</b> Rust</span><span><b>{{c_mb}} MB</b> C</span><span><b>{{cpp_mb}} MB</b> C++</span><span>Whole app {{app_pct}}% ported</span></div>
-      <p class="receipt">libobs and app figures: <a href="https://github.com/obs-rust/obs-studio/blob/leaderboard/conversion.json">conversion.json</a> @ {{conv_commit}} · {{conv_date}}. Language bytes: GitHub linguist, {{build_date}}.</p>
+      <p class="receipt">libobs and app figures: <a href="https://github.com/obs-rust/obs-studio/blob/{{conv_blob_sha}}/conversion.json">conversion.json</a> @ {{conv_commit}} · {{conv_date}}. Language bytes: GitHub linguist, {{build_date}}.</p>
       <div class="stats">
         <div><b>{{n_features}}</b><span>User-visible changes</span></div>
         <div><b>{{n_fixed}}</b><span>Upstream bugs fixed</span></div>
@@ -161,8 +165,8 @@
 <section id="compat">
   <div class="wrap">
     <span class="eyebrow">Drop-in, by contract</span>
-    <h2>Nothing you rely on <em>breaks</em></h2>
-    <p class="lede">The public surface is a compatibility contract. Rust replaces C behind the same symbols, and four tiers of tests keep the two identical.</p>
+    <h2>Built to stay <em>compatible</em></h2>
+    <p class="lede">The public surface is a compatibility contract. Rust replaces C behind the same symbols, and four tiers of tests compare the Rust build against the original C.</p>
     <div class="compat">
       <div class="plate card"><h3><span class="ico">C</span>libobs C ABI</h3><p>The exported symbols and headers stay the same. Plugins compiled for OBS load without a rebuild.</p></div>
       <div class="plate card"><h3><span class="ico">v5</span>obs-websocket</h3><p>The upstream C++ plugin ships unmodified as the compatibility check. Stream Deck, Touch Portal, bots and overlays keep working.</p></div>
@@ -223,6 +227,7 @@
         <a class="btn ghost" href="/ai/">AI corpus</a>
       </div>
     </div>
+    <p class="caution"><b>Caution</b> <code>--dangerously-skip-permissions</code> lets the agent run any command without asking. Use it only in a disposable VM or container with no credentials you would not hand to it.</p>
     <div class="term"><div class="tb"><i></i><i></i><i></i></div><pre><span class="c"># one worker, one issue, one PR — on a 10-minute loop</span>
 <span class="k">PROMPT</span>=<span class="s">"/loop 10m https://raw.githubusercontent.com/obs-rust/obs-studio/refs/heads/master/.claude/skills/obs-worker/SKILL.md"</span>
 <span class="n">claude</span> --dangerously-skip-permissions <span class="s">"$PROMPT"</span></pre></div>

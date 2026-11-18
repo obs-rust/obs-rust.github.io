@@ -221,7 +221,8 @@ def download_md(chans: list[Channel], groups: tuple[DownloadGroup, ...], readme:
 def control_md(n_requests: int, n_events: int, n_enums: int, n_tools: int, n_ro: int) -> str:
     return f"""# Control OBS Studio Rust from code: WebSocket or MCP
 
-OBS Studio Rust can be driven two ways. Both run locally against a running OBS.
+OBS Studio Rust can be driven two ways: obs-websocket from any machine that can reach OBS, or the MCP server
+on the OBS machine itself (Linux).
 
 ## Choose
 
@@ -232,7 +233,8 @@ OBS Studio Rust can be driven two ways. Both run locally against a running OBS.
 
 ## obs-websocket v5
 
-- Connect to `ws://localhost:4455` (the port is set in Tools → WebSocket Server Settings).
+- Connect to `ws://<host>:4455`: the OBS machine itself or any host that can reach it (the port is set in
+  Tools → WebSocket Server Settings). A WebSocket client may run remotely.
 - Handshake: the server sends `Hello` (op 0); you reply `Identify` (op 1) with `rpcVersion: 1` and, if a
   password is set, `authentication = base64(sha256(base64(sha256(password + salt)) + challenge))`; the server
   answers `Identified` (op 2). Then send `Request` (op 6) messages and read `RequestResponse` (op 7).
@@ -244,6 +246,8 @@ OBS Studio Rust can be driven two ways. Both run locally against a running OBS.
 
 ## MCP server
 
+- Linux only for now: the server is built from an obs-studio checkout and runs on Linux. It is local: it runs on
+  the OBS machine, next to the agent.
 - The server speaks JSON-RPC over stdio (MCP protocol 2025-06-18). Client config, requirements and
   example sessions: {SITE}/mcp/index.md.
 - Tool list without starting the server: {SITE}/mcp/schema.json (tools/list + resources/list + ToolError).
@@ -261,7 +265,7 @@ def examples_md(template_html: str) -> str:
 
 # ---------------------------------------------------------------- router and manifest
 ROUTER: tuple[tuple[str, str], ...] = (
-    ("Install the beta and verify the download", "/ai/docs/site-download.md"),
+    ("Install and verify the download", "/ai/docs/site-download.md"),
     ("Choose WebSocket or MCP and connect", "/ai/docs/site-control.md"),
     ("Copy a working client snippet", "/ai/docs/site-examples.md"),
     ("Look up an obs-websocket request, event or enum", "/ai/docs/obs-websocket-reference.md"),

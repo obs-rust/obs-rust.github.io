@@ -412,7 +412,8 @@ CLIENT_CONFIG = McpJson(mcpServers={"obs": McpServerConfig(command="/path/to/obs
 def corpus_markdown(surface: Surface, sessions: list[Session]) -> str:
     """The /mcp/ reference as markdown, for the AI corpus and /mcp/index.md."""
     o = ["# obs-studio-rust MCP server reference (generated)", "",
-         f"MCP server `obs-mcp` {surface.version or ''}, protocol {surface.protocol}. Local only: stdio "
+         f"MCP server `obs-mcp` {surface.version or ''}, protocol {surface.protocol}. Platform: Linux only for now. "
+         "Local only: stdio "
          "(`./mcp --mcp`) or a unix socket (`--mcp-listen` / `--mcp-attach`). Built from source with "
          "`./mcp --build` in an obs-studio checkout. Machine-readable: https://obs-rust.com/mcp/schema.json.",
          "", "Client config (Claude Code, Cursor, Claude Desktop):", "```json",

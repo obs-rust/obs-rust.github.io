@@ -107,7 +107,7 @@
     <div>
       <span class="eyebrow">obs-studio-rust · public beta</span>
       <h1><span class="row">The OBS</span><span class="row out">you know.</span><span class="row"><em>Rebuilt</em> in Rust.</span></h1>
-      <p class="lede">An independent rewrite of OBS Studio, one module at a time. The libobs C ABI, the obs-websocket v5 protocol and your plugins, scenes and profiles keep working, and the crashes go away.</p>
+      <p class="lede">An independent rewrite of OBS Studio, one module at a time. The libobs C ABI, the obs-websocket v5 protocol and your plugins, scenes and profiles keep working, and {{n_fixed}} upstream bugs are already fixed.</p>
       <div class="cta">
         <a class="btn primary" href="#download">Download beta ↓</a>
         <a class="btn" href="https://github.com/obs-rust/obs-studio">★ {{stars}} on GitHub</a>
@@ -120,7 +120,7 @@
       <div class="screen">
         <img src="/assets/obs-rust-badge.svg" alt="">
         <div class="safe"></div>
-        <div class="lower"><b>libobs</b><span>now {{rust_pct}}% Rust</span></div>
+        <div class="lower"><b>libobs</b><span>{{libobs_pct}}% ported to Rust</span></div>
         <div class="scan"></div>
       </div>
       <div class="dock">
@@ -142,17 +142,18 @@
         <div>
           <span class="eyebrow">The crossover</span>
           <h2 style="margin:0">{{xo_title}}</h2>
-          <p class="muted" style="margin-top:8px">Bytes of source in obs-rust/obs-studio, per GitHub's language stats, refreshed daily.</p>
         </div>
-        <div class="big">{{rust_pct}}<small>% Rust</small></div>
+        <div class="big" title="libobs lines ported to Rust, from conversion.json">{{libobs_pct}}<small>% of libobs ported</small></div>
       </div>
+      <p class="muted" style="margin-bottom:10px;font-size:15px">Whole repository, bytes of source by language:</p>
       <div class="bars" role="img" aria-label="Rust {{rust_pct}} percent, C {{c_pct}} percent, C++ {{cpp_pct}} percent, other {{other_pct}} percent">
         <div class="r" style="flex:{{rust_pct}}">Rust {{rust_pct}}%</div>
         <div class="c" style="flex:{{c_pct}}">C {{c_pct}}%</div>
         <div class="x" style="flex:{{cpp_pct}}">C++ {{cpp_pct}}%</div>
         <div class="o" style="flex:{{other_pct}}">other</div>
       </div>
-      <div class="legend"><span><b>{{rust_mb}} MB</b> Rust</span><span><b>{{c_mb}} MB</b> C</span><span><b>{{cpp_mb}} MB</b> C++</span><span>Updated {{build_date}}</span></div>
+      <div class="legend"><span><b>{{rust_mb}} MB</b> Rust</span><span><b>{{c_mb}} MB</b> C</span><span><b>{{cpp_mb}} MB</b> C++</span><span>Whole app {{app_pct}}% ported</span></div>
+      <p class="receipt">libobs and app figures: <a href="https://github.com/obs-rust/obs-studio/blob/leaderboard/conversion.json">conversion.json</a> @ {{conv_commit}} · {{conv_date}}. Language bytes: GitHub linguist, {{build_date}}.</p>
       <div class="stats">
         <div><b>{{n_features}}</b><span>User-visible changes</span></div>
         <div><b>{{n_fixed}}</b><span>Upstream bugs fixed</span></div>

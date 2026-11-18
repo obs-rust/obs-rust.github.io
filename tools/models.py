@@ -586,11 +586,17 @@ class HeroImage:
 
 @dataclass(frozen=True, slots=True)
 class LedgerPicture:
-    """A second upstream capture on /, re-encoded like the hero and shown beside its features-ledger entry."""
+    """Upstream's two status-bar captures (hardware GPU, CPU rendering), shown beside their features-ledger entry."""
 
     gpu_src: str
     gpu_w: int
     gpu_h: int
+    gpu_alt: str
+    gpu2_src: str
+    gpu2_w: int
+    gpu2_h: int
+    gpu2_alt: str
+    gpu_intro: str
     gpu_name: str
     gpu_desc: str
     gpu_area: str

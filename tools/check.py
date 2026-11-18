@@ -393,6 +393,14 @@ def check_object_first(site: Path) -> list[str]:
     for f in (ws, mcp):
         if f.is_file() and not HASH_OPENER.search(f.read_text()):
             errs.append(f"{f.relative_to(site)}: no hashchange handler to open the entry a #Name link points at")
+    exf = site / "examples/index.html"
+    if exf.is_file():
+        obj = re.search(r"<(\w+)\b[^>]*\sdata-object[\s>=][^>]*>(.*?)</pre>", exf.read_text(), re.S)
+        if obj is None or "<h2" in obj[2]:
+            errs.append("examples: the data-object must be the code plate (a <pre> before any <h2>), not the prose block")
+    for f in sorted(site.rglob("*.html")):
+        if "runs unchanged against" in f.read_text():
+            errs.append(f"{f.relative_to(site)}: claims examples 'run unchanged against' both OBS builds; say what is so per example")
     home = (site / "index.html").read_text() if (site / "index.html").is_file() else ""
     if '<div class="chan" id="stable">' not in home or '<details class="chan" id="beta">' not in home:
         errs.append("index.html: the stable files must stay open and the beta files close")

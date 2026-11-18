@@ -51,28 +51,56 @@ def _record(cid: str, doc: Doc, kind: ChunkKind, crumb: list[str], url: str, sou
 
 
 # ---------------------------------------------------------------- prose
-def _sections(text: str) -> list[tuple[list[str], str]]:
-    """Split markdown on headings outside fences; return (heading path, body) in order."""
-    out: list[tuple[list[str], str]] = []
+def gh_anchor(heading: str) -> str:
+    """GitHub's markdown heading anchor (before de-duplication)."""
+    t = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", heading)
+    t = re.sub(r"<[^>]+>", "", t).strip().lower()
+    t = re.sub(r"[^\w\- ]", "", t)
+    return t.replace(" ", "-")
+
+
+def _sections(text: str, rst: bool = False) -> list[tuple[list[str], str, str]]:
+    """Split markdown on headings outside fences; return (heading path, body, anchor) in order. Anchors
+    are counted over every heading (h1-h6) in document order, as GitHub de-duplicates them; GitHub's
+    RST renderer uses the same slug rule but does not add duplicate suffixes."""
+    out: list[tuple[list[str], str, str]] = []
     path: list[str] = []
     buf: list[str] = []
+    anchor = "top"
+    used: dict[str, int] = {}
     fence = False
     for line in text.splitlines():
         if re.match(r"^\s*(```|~~~)", line):
             fence = not fence
-        m = None if fence else re.match(r"^(#{1,4})\s+(.+?)\s*#*\s*$", line)
+        h = None if fence else re.match(r"^(#{1,6})\s+(.+?)\s*#*\s*$", line)
+        m = h if h and len(h[1]) <= 4 else None
+        if h:
+            base = gh_anchor(h[2])
+            n = used.get(base, 0)
+            used[base] = n + 1
+            this_anchor = base if (n == 0 or rst) else f"{base}-{n}"
+        else:
+            this_anchor = anchor
         if m:
             if "\n".join(buf).strip():
-                out.append((list(path), "\n".join(buf)))
+                out.append((list(path), "\n".join(buf), anchor))
             lvl = len(m[1])
             path = path[: lvl - 1] + [""] * max(0, lvl - 1 - len(path))
             path = path[: lvl - 1] + [re.sub(r"`|\*\*", "", m[2]).strip()]
+            anchor = this_anchor or "top"
             buf = []
         else:
             buf.append(line)
     if "\n".join(buf).strip():
-        out.append((list(path), "\n".join(buf)))
+        out.append((list(path), "\n".join(buf), anchor))
     return out
+
+
+def anchored_url(doc: Doc, anchor: str, site: str) -> str:
+    """Absolute URL of a prose section: the GitHub source pinned to the commit when the doc lives
+    there, else the doc's page on this site; always with a fragment."""
+    base = doc.source if doc.source.startswith("https://") else site + doc.site_url
+    return f"{base.split('#')[0]}#{anchor}"
 
 
 def _blocks(body: str) -> list[str]:
@@ -119,25 +147,25 @@ def _split_long(block: str) -> list[str]:
     return final
 
 
-def prose_chunks(doc: Doc, title: str) -> list[Chunk]:
-    secs = _sections(doc.text)
+def prose_chunks(doc: Doc, title: str, site: str = "https://obs-rust.com") -> list[Chunk]:
+    secs = _sections(doc.text, rst=doc.path.endswith(".rst"))
     # merge tiny sections into the previous one (sibling or parent)
-    merged: list[tuple[list[str], str]] = []
-    for path, body in secs:
+    merged: list[tuple[list[str], str, str]] = []
+    for path, body, anc in secs:
         if merged and len(body.strip()) < MIN_CHARS:
-            ppath, pbody = merged[-1]
+            ppath, pbody, panc = merged[-1]
             hdr = "#" * max(1, len([p for p in path if p])) + " " + (path[-1] if path else "")
-            merged[-1] = (ppath, pbody.rstrip() + "\n\n" + (hdr + "\n" if path else "") + body.strip())
+            merged[-1] = (ppath, pbody.rstrip() + "\n\n" + (hdr + "\n" if path else "") + body.strip(), panc)
         else:
-            merged.append((path, body))
+            merged.append((path, body, anc))
     # a short opening section has nothing before it: fold it forward into the next one
     while len(merged) > 1 and len(merged[0][1].strip()) < MIN_CHARS:
-        (p0, b0), (p1, b1) = merged[0], merged[1]
+        (p0, b0, a0), (p1, b1, _a1) = merged[0], merged[1]
         hdr = "#" * max(1, len([p for p in p1 if p])) + " " + (p1[-1] if p1 else "")
-        merged[:2] = [(p0, b0.rstrip() + "\n\n" + hdr + "\n" + b1.strip())]
+        merged[:2] = [(p0, b0.rstrip() + "\n\n" + hdr + "\n" + b1.strip(), a0)]
     out: list[Chunk] = []
     seen: dict[str, int] = {}
-    for path, body in merged:
+    for path, body, anc in merged:
         pieces: list[str] = []
         cur = ""
         for b in _blocks(body):
@@ -159,7 +187,7 @@ def prose_chunks(doc: Doc, title: str) -> list[Chunk]:
             if n:
                 cid += f"-{n + 1}"
             out.append(_record(cid, doc, "prose", [title] + [p for p in path if p and p != title],
-                               doc.site_url, doc.source, piece))
+                               anchored_url(doc, anc, site), doc.source, piece))
     return out
 
 
@@ -232,8 +260,9 @@ def ledger_chunks(doc: Doc, items: list[LedgerItem]) -> list[Chunk]:
             key += "+"
         seen.add(key)
         kind: ChunkKind = "ledger-fix" if it.section == "Fixed upstream bugs" else "ledger-entry"
-        out.append(_record(key, doc, kind, ["Features ledger", it.section, it.area],
-                           doc.site_url, doc.source, txt))
+        url = (f"https://github.com/obs-rust/obs-studio/pull/{pr[1]}" if pr
+               else anchored_url(doc, gh_anchor(it.area or it.section) or "top", "https://obs-rust.com"))
+        out.append(_record(key, doc, kind, ["Features ledger", it.section, it.area], url, doc.source, txt))
     return out
 
 

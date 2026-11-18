@@ -162,6 +162,12 @@ def main() -> int:
             got = {x.id for x in c.chunks if x.kind == kind}
             if want != got:
                 errs.append(f"corpus.json: {kind} chunks differ from protocol.json: {sorted(want ^ got)[:5]}")
+        bad_url = [x.id for x in c.chunks if not x.url.startswith("https://")]
+        if bad_url:
+            errs.append(f"corpus.json: {len(bad_url)} chunk urls are not absolute, e.g. {bad_url[0]}")
+        no_anchor = [x.id for x in c.chunks if x.kind == "prose" and "#" not in x.url]
+        if no_anchor:
+            errs.append(f"corpus.json: {len(no_anchor)} prose chunk urls have no #anchor, e.g. {no_anchor[0]}")
         for x in c.chunks:
             if x.kind == "prose" and x.chars > 2400 and "```" not in x.text and "\n|" not in x.text:
                 errs.append(f"corpus.json: prose chunk {x.id} is {x.chars} chars (> 2400)")

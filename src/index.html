@@ -26,7 +26,20 @@
 .mon .lower b{background:var(--rust);color:#120700;padding:6px 10px}
 .mon .lower span{background:#0d0f10;padding:6px 12px;color:var(--fg);flex:1}
 .mon figcaption{margin-top:8px}
-.dl .sha{display:block;margin:4px 2px 8px;font:500 10.5px/1.35 var(--mono);color:var(--dim);word-break:break-all;user-select:all}
+.dl .sha{display:block;margin:4px 2px 8px;font:500 12px/1.4 var(--mono);color:var(--dim);word-break:break-all;user-select:all}
+.dl .verify{margin-top:10px;font-size:13px;color:var(--dim)}
+.chan{margin-top:34px}
+.chan h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;font:600 18px var(--mono)}
+.chan h3 b{font:800 26px var(--stencil);text-transform:uppercase;color:var(--rust)}
+.chan h3 span{font-size:13px;color:var(--dim)}
+.chan .dl{margin-top:14px}
+.limits{margin-top:30px;padding:24px 26px}
+.limits h3{font:800 24px var(--stencil);text-transform:uppercase;margin-bottom:10px}
+.limits ul{list-style:none;display:grid;gap:10px}
+.limits li{display:grid;grid-template-columns:130px minmax(0,1fr) auto;gap:14px;align-items:baseline;font-size:15px}
+.limits li b{font:700 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--haz)}
+.limits .receipt{white-space:nowrap}
+@media(max-width:700px){.limits li{grid-template-columns:minmax(0,1fr)}}
 .dl .yours{box-shadow:0 0 0 1px var(--rust)}
 
 /* crossover */
@@ -102,7 +115,7 @@
         <a class="btn" href="https://github.com/obs-rust/obs-studio">★ {{stars}} on GitHub</a>
         <a class="btn ghost" href="/websocket/">WebSocket API</a>
       </div>
-      <div class="rel"><span class="dot"></span> Latest: <a href="{{release_url}}">{{release_name}}</a> · {{release_date}}</div>
+      <div class="rel"><span class="dot"></span> {{release_line}}</div>
     </div>
     <figure class="mon">
       <div class="bar"><span class="tally" aria-hidden="true"></span><span>Program · OBS Studio Rust</span><span class="src">AppImage test capture</span></div>
@@ -160,11 +173,15 @@
 
 <section id="download">
   <div class="wrap">
-    <span class="eyebrow">Download · {{release_tag}}</span>
-    <h2>Get the <em>beta</em></h2>
-    <p class="lede">Betas are cut from master. Each one installs and runs <b>beside</b> upstream OBS with its own app identity and settings folder, so you can try it without uninstalling anything.</p>
-    <div class="dl">{{downloads}}</div>
-    <p class="muted" style="margin-top:14px;font-size:15px">All builds and checksums: <a href="https://github.com/obs-rust/obs-studio/releases">github.com/obs-rust/obs-studio/releases</a>. Install notes are in the <a href="https://github.com/obs-rust/obs-studio#install">README</a>.</p>
+    <span class="eyebrow">Download</span>
+    <h2>Get OBS Studio <em>Rust</em></h2>
+    <p class="lede">It installs and runs <b>beside</b> upstream OBS with its own app identity and settings folder, so you can try it without uninstalling anything. Your OS is listed first.</p>
+    {{downloads}}
+    <div class="limits plate">
+      <h3>What to expect</h3>
+      <ul>{{limits}}</ul>
+    </div>
+    <p class="muted" style="margin-top:14px;font-size:15px">Every release with its <code>SHA256SUMS</code>: <a href="https://github.com/obs-rust/obs-studio/releases">github.com/obs-rust/obs-studio/releases</a>. Full install notes: <a href="https://github.com/obs-rust/obs-studio#install">README</a> · <a href="/ai/docs/site-download.md">as markdown</a>.</p>
   </div>
 </section>
 
@@ -228,7 +245,7 @@
 {{footer}}
 <script>
 (()=>{const ua=navigator.userAgent,os=/Windows/.test(ua)?'windows':/Mac OS X/.test(ua)&&!/iPhone|iPad/.test(ua)?'macos':/Linux/.test(ua)&&!/Android/.test(ua)?'linux':'';
-const c=os&&document.querySelector('.dl [data-os="'+os+'"]');if(c){c.parentNode.prepend(c);c.classList.add('yours')}})();
+if(os)document.querySelectorAll('.dl [data-os="'+os+'"]').forEach(c=>{c.parentNode.prepend(c);c.classList.add('yours')});})();
 </script>
 </body>
 </html>

@@ -28,7 +28,7 @@ EXPECTED = ["index.html", "404.html", "websocket/index.html", "examples/index.ht
             "sitemap.xml", "robots.txt", "CNAME"]
 BUDGET_KB = {"llms-ctx.txt": 300, "assets/fonts": 160, "index.html": 120}
 # Words in the home copy that contain digits but are names, not figures.
-DIGIT_OK = {"v5", "10m", "10-minute", "c++", "404"}
+DIGIT_OK = {"v5", "10m", "10-minute", "c++", "404", "sha256sums"}
 
 
 LOAD_RELS = {"stylesheet", "preload", "icon", "modulepreload", "preconnect"}
@@ -181,6 +181,16 @@ def main() -> int:
     n_dl = home.count('class="sha"')
     if n_dl == 0 or n_dl != len(re.findall(r'<li><a href="https://github.com/obs-rust/obs-studio/releases/download/', home)):
         errs.append(f"index.html: {n_dl} SHA-256 lines do not match the download links")
+
+    # stable and beta channels, each with 3+ hashed files; limits quoted with a README receipt (P0 #5, #8)
+    chans = re.findall(r'<div class="chan" id="([a-z]+)">(.*?)(?=<div class="chan"|<div class="limits)', home, re.S)
+    if {c for c, _ in chans} != {"stable", "beta"}:
+        errs.append(f"index.html: download channels are {[c for c, _ in chans]}, want stable and beta")
+    for name, body in chans:
+        if body.count('class="sha"') < 3:
+            errs.append(f"index.html: {name} channel lists fewer than 3 hashed files")
+    if len(re.findall(r'href="https://github.com/obs-rust/obs-studio/blob/[0-9a-f]{40}/README.md#L\d+"', home)) < 3:
+        errs.append("index.html: fewer than 3 limits with a commit-pinned README receipt")
 
     # agent router and manifest (DESIGN.md P0 #2)
     llms_text = (site / "llms.txt").read_text()

@@ -15,7 +15,7 @@ from collections.abc import Callable
 from html.parser import HTMLParser
 from pathlib import Path
 
-from models import Checksums, DownloadGroup, GhRelease, Manifest, ManifestDoc, RouterRow, Tier
+from models import Channel, DownloadGroup, Manifest, ManifestDoc, RouterRow, Tier
 
 SITE = "https://obs-rust.com"
 
@@ -194,24 +194,26 @@ def readme_section(readme: str, heading: str) -> str:
     return re.sub(r"^## ", "### ", m[1].strip(), flags=re.M)
 
 
-def download_md(rel: GhRelease | None, sums: Checksums | None, groups: tuple[DownloadGroup, ...],
-                readme: str, human_size: Callable[[int], str]) -> str:
-    out = ["# Download OBS Studio Rust", ""]
-    if rel is None or sums is None:
-        out += ["No release with SHA256SUMS was found. See https://github.com/obs-rust/obs-studio/releases.", ""]
-    else:
-        out += [f"Latest release: **{rel.name or rel.tag_name}** (`{rel.tag_name}`), published "
-                f"{(rel.published_at or '')[:10]}. Release page: {rel.html_url}", "",
-                "Pick the row for your OS and CPU. Verify the download with "
-                "`sha256sum <file>` (Linux), `shasum -a 256 <file>` (macOS) or "
-                "`Get-FileHash <file>` (Windows PowerShell); it must equal the SHA-256 below.", ""]
+def download_md(chans: list[Channel], groups: tuple[DownloadGroup, ...], readme: str,
+                human_size: Callable[[int], str]) -> str:
+    out = ["# Download OBS Studio Rust", "",
+           "Two channels. **Stable** is recommended; **Beta** is the newest build from master. Verify a download "
+           "with `sha256sum <file>` (Linux), `shasum -a 256 <file>` (macOS) or `Get-FileHash <file>` "
+           "(Windows PowerShell); it must equal the SHA-256 listed.", ""]
+    for ch in chans:
+        out += [f"## {ch.name}: {ch.rel.name or ch.rel.tag_name}", "",
+                f"Tag `{ch.rel.tag_name}`, published {(ch.rel.published_at or '')[:10]}. {ch.note} "
+                f"Release page: {ch.rel.html_url}", ""]
         for g in groups:
-            out += [f"## {g.os_name} ({g.arch})", "", "| Package | File | Size | SHA-256 |", "|---|---|---|---|"]
+            rows: list[str] = []
             for opt in g.options:
-                asset = next(x for x in rel.assets if x.name.endswith(opt.suffix))
-                out.append(f"| {opt.label} | [{asset.name}]({asset.browser_download_url}) | "
-                           f"{human_size(asset.size)} | `{sums.by_name[asset.name]}` |")
-            out.append("")
+                asset = next((x for x in ch.rel.assets if x.name.endswith(opt.suffix)), None)
+                if asset is None:
+                    continue
+                rows.append(f"| {opt.label} | [{asset.name}]({asset.browser_download_url}) | "
+                            f"{human_size(asset.size)} | `{ch.sums.by_name[asset.name]}` |")
+            out += [f"### {g.os_name} ({g.arch})", "", "| Package | File | Size | SHA-256 |", "|---|---|---|---|",
+                    *rows, ""]
     out += ["## Install notes (from the project README)", "", readme_section(readme, "Install"), ""]
     return "\n".join(out)
 

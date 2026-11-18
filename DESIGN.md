@@ -1,15 +1,17 @@
 # obs-rust.com — design document
 
-Revision 6 — 2026-11-18. Living document; supersedes Revision 5 (same day, in git history).
+Revision 7 — 2026-11-18. Living document; supersedes Revision 6 (same day, in git history).
 
-Revision 5 cut P0 to four items; PR #15 shipped them at 09:39 UTC and the site now says nothing
-wrong. This revision raises the bar to "stunningly good": it names the five changes that most
-improve first impressions and craft, and makes §11 measure and judge them. Measured on
-https://obs-rust.com on 2026-11-18, 09:36 to 10:07 UTC (site `a5c722e`, obs-studio@`7d007e416`).
+Revision 6 raised the bar from "nothing wrong" to "stunningly good" with five craft items, #26
+to #30. This revision refines it and adds no work: P0 is empty since PR #16 and #30 shipped in
+#18; the four items left are in build order with their files and the §11 lines each turns
+green (§10); checks that were entangled, flaky, unreachable or not worth their cost are fixed
+or dropped (§11, "What changed"). Measured on https://obs-rust.com, 2026-11-18, 10:36 to 10:48
+UTC (site `3b5904f`, then `d1de09d`).
 
-**Revision 5's script:** 11 `FAIL` lines at 09:36 (site `9e19464`), **1** at 09:45 after #15.
-**Revision 6's script: 19 `FAIL` lines** at 10:01 and 10:06: that one (P0), one search fault the old
-script hid, and 17 for craft (§3; §10 "stunning").
+**Revision 6's script: 18 `FAIL` lines** at 10:36 (19 before #16). **Revision 7's script: 29**
+at 10:44 and 10:46, after #18: the same faults less search, one line per item and page (10 for
+#26, 10 for #27, 8 for #28, 1 for #29), so each PR turns whole lines green.
 
 ## 1. Position
 
@@ -31,14 +33,17 @@ When goals conflict: truth of a claim, then agent-readable text, then visual pol
 | R3 P0 #2, #3: real app, agent router | Hero is the upstream screenshot `/assets/main-window.webp` (34 KB) with a receipt. `## Router` heads `llms.txt` and `/ai/`: 12 rows, each printed size equal to the bytes served; `/ai/manifest.json` lists 106 documents and every tenth matches its SHA-256 | #6, #8, #9 |
 | R4 P0 #5, #8: stable and beta, "What to expect" | `#stable` offers `v1.0.0` (7 files) and `#beta` offers `v1.0.1-beta.20261108` (9 files); 16 of 16 hashes equal the line in that release's `SHA256SUMS`, on `/` and in `site-download.md`, with JS off too. Six limits beside the download, each linking `blob/<40 hex>/README.md#L<n>`; the cited lines support their sentence (A4) | #11 |
 | R4 P0 #17a, #2 (part), #15a | At 320, 390 and 1440 px: no sideways scroll, no text under 12 px, no control under 24 px, no nav link off screen, a `:focus-visible` ring. All chunk `url`s are absolute and every ninth distinct one is 200 | #12, #13 |
-| R5 P0 5b (desktop), 12: stable first, app first | Eyebrow "obs-studio-rust · stable v1.0.0"; the action reads "Download v1.0.0 ↓" at 1440 px (at 390 px it is below the first screen: P0 5c). `llms.txt`: "ships stable and beta builds", "Releases: stable obs-studio-rust-v1.0.0; beta obs-studio-rust-v1.0.1-beta.20261108"; router row "Install and verify the download" (A5). The screenshot is 660 px wide at 1440x900 and 343 px at 390x844, ending 0.72 and 0.74 screens down; h1 is 72 px and 38 px | #15 |
+| R5 P0 5b (desktop), 12: stable first, app first | Eyebrow "obs-studio-rust · stable v1.0.0"; the action reads "Download v1.0.0 ↓" at 1440 px. `llms.txt`: "ships stable and beta builds", "Releases: stable obs-studio-rust-v1.0.0; beta obs-studio-rust-v1.0.1-beta.20261108"; router row "Install and verify the download" (A5). The screenshot is 660 px wide at 1440x900 and 343 px at 390x844, ending 0.72 and 0.74 screens down; h1 is 72 px and 38 px | #15 |
 | R5 P0 4, 2: promises reworded, figure pinned, agent path closed | None of the six banned phrases on any page (A3): "Built to stay compatible"; "clients written for obs-websocket v5 (OBS 28 and later) are expected to work against it unchanged". `/` links `blob/fc58e78c…/conversion.json`, whose `libobs.all.percent` is 60.36, shown as 60.4% (A6). The `--dangerously-skip-permissions` block opens with a `.caution` paragraph. 0 of 1709 chunks hold `<img`, `<p align` or shields.io; "Linux" is in the first 1500 characters of `/mcp/index.md`; `site-control.md` says the MCP server runs "on the OBS machine itself (Linux)" and "A WebSocket client may run remotely" (A7) | #15 |
+| R6 P1 #30: search that answers | On `/ai/#q=install%20on%20windows` the first of 25 hits is `site-download.md#windows-x64-arm64`; `SetInputSettings` and `wait_for` put their typed chunk first (A8). Six example queries; `/` focuses `#q`; the tallest of the first five cards is 150 px, each with a copy button; `#meta` is `aria-live` and reads "25 results for …" (S5). Merged 10:40 UTC during this revision; A8 and both S5 lines are green | #18 |
+| R6 P0 5c: the action on the phone's first screen | At 390x844 the first screen holds the link "Download v1.0.0 ↓" (outside the header) and the whole monitor, 358 px wide, ending 0.73 screens down; B "/ first screen at 390 px" prints nothing (10:36 UTC, site `3ad32a9` and later) | #16 |
 
 ## 3. Critique of the live site: correct, not yet stunning
 
 Seen as a designer, in screenshots at 1440x900 and 390x844 and in computed styles read by the
 §11 probe. The pages are honest and tidy. They are also five pages by five hands, mostly text,
-that never move, and whose two instruments (console and search) wait below the fold.
+that never move, and whose two instruments (console and search) wait below the fold. Search
+itself now answers (#18).
 
 1. **No type scale, and the pages disagree.** 38 distinct font sizes are in use, 20 of them on
    `/` (12.9, 13.5, 21, 24, 34, 39.52, 104 ...). The h1 is 72 px on `/`, 84 px on three pages,
@@ -47,20 +52,14 @@ that never move, and whose two instruments (console and search) wait below the f
    (about 105 and 150 characters a line). `/` and `/ai/` end a four-card row with a lone card.
 2. **Four of five pages open on words.** On `/websocket/` the console starts 0.68 screens down
    at 1440 px and 1.46 at 390 px, under four "op" cards; on `/ai/` the search box is 2.19 and
-   3.92 screens down, under five feed cards. The site has one picture; the 404 "mascot" is
-   the 34 px badge enlarged; `og:image` is a 768 KB square.
+   3.92 screens down, under five feed cards. The site has one picture; `og:image` is a 768 KB
+   square; a 643 KB logo ships unreferenced.
 3. **Too long to scan.** `/websocket/` is 84 screens at 1440 px and 151 at 390 px, every entry
-   open; `/mcp/` is 20 and 34; `/` is 8 and 17. At 390 px the h1 starts 263 px down, under a
-   two-row nav and a 72 px gap, which is why the download action falls off the screen.
+   open; `/mcp/` is 20 and 34; `/` is 8 and 17, of which the download section is 5.5 and
+   "what changed" 3.1 at 390 px.
 4. **Nothing moves.** No element animates. 25% of links and buttons on `/` ease on hover and
    0% to 6% elsewhere, so a button fades on one page and snaps on the next.
 5. **The console is a blank box until you own an OBS**: an empty log and a JSON textarea.
-6. **Search finds, it does not answer.** For "install on windows" the first result is "Flatpak
-   PCH cache qualification (#1760)", a CI note: terms match inside words ("on" in
-   "qualification") and `process` outranks the site's own page. A result is up to 900
-   characters of monospace, 347 px tall. There is no example query, copy control or live
-   count, and `/` does not focus the box (it does on `/websocket/`).
-
 ## 4. Principles and constraints
 
 1. **Receipts, visibly.** Every figure is computed at build time and shows its source, commit
@@ -94,7 +93,7 @@ Five pages and the 404. Each page has one **object**, marked `data-object`, that
               what changed (with one more real capture), build with it
 /websocket/   The console, docked beside the reference.   /websocket/#demo replays a session
 /mcp/         The agent session panel.                    /mcp/index.md is its text twin
-/examples/    The first runnable snippet.                 /404.html: mascot and the nav links
+/examples/    The first runnable snippet.                 /404.html: the badge and the nav links
 /ai/          The search box, then router and feeds.      /ai/#q=<query> runs a search into #hits
               /ai/docs/*.md, corpus.json, manifest.json; /llms.txt, /llms-ctx.txt, /llms-full.txt
 P1 depth:     /download/ /changes/ /progress/ /control/ /websocket/<Name>.md /mcp/tools/<name>.md
@@ -118,8 +117,9 @@ The brand stays. Colour has fixed meaning; a colour used outside its meaning is 
 52, 72; 96 for the hero numeral and the 404 only. **Big Shoulders Stencil Display 900** for
 h1 (72 at 1440 px, 40 at 390 px, on every page), h2 (52, 30) and numerals, six words at most;
 **Barlow 400/600** for body (17, lede 19) and UI (15); **JetBrains Mono** for code (13),
-labels and receipts (12, 13). Sizes are tokens in `site.css`; no page `<style>` sets one.
-**Rhythm and shape:** 1180 px max, 8 px scale, paragraphs 40 em wide at most. Every page starts
+labels and receipts (12, 13). Sizes and radii are tokens in `site.css` (`--t-*`, `--r-*`); a
+page `<style>` may lay out its own object but names them by token, never as a px literal.
+**Rhythm and shape:** 1180 px max, 8 px scale, body text (15 px and up) 40 em wide at most. Every page starts
 the same: header, 72 px (24 px at 390 px), eyebrow, h1, lede, object. Sections are 96 px apart
 (64 px at 390 px). Radius is 4 px on controls and tags, 6 px on plates, 50% on lights. A card
 row never ends in one lone card. Tables and code scroll in their own box, never the page.
@@ -131,13 +131,14 @@ every computed number and limit, its link a 40-hex permalink. **The headline fig
 per view, libobs lines ported; other denominators are labelled rows beneath it or leave the
 page. **The tally light**: lit red only for live state, the WebSocket console connection.
 
-**Imagery** is real or it is the mascot: upstream captures (`docs/images/`) with a receipt, a
-generated 1200x630 social card built from the app screenshot, and the bronze robot (one file
-under 60 KB) on `/ai/`, the 404 page and the card. No stock art or decorative illustration.
-**Motion has a job; CSS only; off under `prefers-reduced-motion`.** (a) Every link, button and
-`summary` eases colour, border and background over 120 to 180 ms, alike on every page. (b) The
-conversion bar fills once, from zero to its figure, within 1.2 s. (c) The tally pulses while
-the console is connected. (d) A copy control shows "copied" for 1.5 s. Nothing else moves.
+**Imagery** is real: upstream captures (`docs/images/`) re-encoded at build, each with a
+receipt, and a 1200x630 social card generated from the app screenshot. The badge is the only
+drawn mark. No stock art, no decorative illustration, no shipped file that no page references.
+**Motion has a job; CSS only, all of it in `site.css`; off under `prefers-reduced-motion`.**
+(a) Every link, button and `summary` eases colour, border and background over 120 to 180 ms,
+by one rule, alike on every page. (b) The conversion bar fills once, from zero to its figure,
+within 1.2 s. (c) The tally pulses while the console is connected, the one animation that
+repeats. (d) A copy control shows "copied" for 1.5 s. Nothing else moves.
 
 ## 7. Content and corpus
 
@@ -186,7 +187,7 @@ Checked by `tools/check.py` on `_site/`, and by §11 on the live site. Live valu
 | Fonts, all files; largest image on `/` | 160 KB [157.7 KB]; 120 KB [34 KB] |
 | `llms.txt` / `llms-ctx.txt` | 80 links, 25 KB [55, 16.6 KB] / 300 KB [230.5 KB] |
 | Social card | 1200x630 PNG under 200 KB [768 KB square]; unreferenced assets 0 [1, 643 KB] |
-| Page length at 1440 / 390 px, in screens | `/` 6 / 11 [8.1 / 17.2]; `/websocket/` 15 / 30 [84 / 151]; `/examples/` 6 / 9 [6 / 8.3]; `/ai/` 4.5 / 9 [4.1 / 8.7]; `/mcp/` 10 / 18 [19.6 / 33.6] |
+| Page length at 1440 / 390 px, in screens | `/` 6.5 / 12 [8.1 / 17.2]; `/websocket/` 15 / 30 [84 / 151]; `/examples/` 7 / 10 [6 / 8.3]; `/ai/` 5 / 10 [4.1 / 8.7]; `/mcp/` 10 / 18 [19.6 / 33.6] |
 
 Accessibility is WCAG 2.2 AA; §11 B probes it at 320, 390 and 1440 px, and with JS off;
 `check.py` keeps heading order, `alt`, labels, the skip link and contrast. Long pages get short
@@ -195,45 +196,51 @@ anchor, so every name is on the page and findable with JS off.
 
 ## 9. WebSocket reference and console
 
-Sticky index left, reference centre, console docked right and in the first screen (a bottom
-sheet under 1200 px), so "Try" never scrolls the reader away. "Try" builds a typed form from
-`requestFields`; a missing required field disables Send and says why. The password is never
-stored. The log (`#log`) reads as a conversation: one row per frame with `data-op`,
-direction, op name, indented JSON and round-trip time.
+Sticky index left, reference centre, console (`#console`) docked right and in the first screen,
+so "Try" never scrolls the reader away. Under 1200 px it is a bottom sheet that shows 15% of
+the screen or more (state, the last frame, Replay) and opens on "Try". The password is never
+stored. The log (`#log`) reads as a conversation: one row per frame with `data-op`, direction,
+op name, indented JSON and round-trip time. A typed form per request is depth (item 19).
 
-**Replay.** `/websocket/#demo`, and a "Replay a recorded session" button, play a checked-in
-transcript (Hello, Identify, Identified, `GetVersion`, its response, one event) into the log
-within four seconds; no socket opens. The console says "recorded from obs-studio-rust-v<n>" in
-`--haz`, `#st` reads "replay" and the tally stays unlit. The build fails if a frame names
-what `protocol.json` lacks or the tag is not the newest stable release.
+**Replay.** `/websocket/#demo`, and a "Replay a session" button, play a checked-in transcript
+(Hello, Identify, Identified, `GetVersion`, its response, one event), inlined in the page at
+build, into the log within four seconds; no socket opens. The console says, in `--haz`, where
+the frames came from: "recorded from obs-studio-rust-v<n>" only if they were captured from
+that release, otherwise "scripted from the protocol of obs-studio-rust-v<n>". `#st` reads
+"replay" and the tally stays unlit. The build fails if a frame names what `protocol.json`
+lacks or the tag is not the newest stable release.
 
 ## 10. Backlog
 
 Numbers continue Revisions 3 to 5; a letter marks a split. An item is done when its check
 passes in `tools/check.py` on `_site/` and in §11 on the live site.
 
-### P0: correct (1 `FAIL` line)
+### P1 "stunning": what §11 S and D5 to D9 judge (29 `FAIL` lines; P0 is empty)
 
-| # | Item | Acceptance check |
-|---|---|---|
-| 5c | **The action on the phone's first screen.** At 390x844 a download link that names the stable release is visible without scrolling: one nav row, 24 px under the header, the action above or over the monitor. | B "/ first screen at 390 px" prints nothing. |
+Four PRs, in this order, one item each; these alone stand between the site and an LGTM (#30
+shipped in #18 and holds A8, both S5 lines and D9). Each PR adds its S lines to `check.py`,
+and leaves every line that was green, green.
 
-### P1 "stunning": what §11 A8, S and D5 to D9 judge (18 `FAIL` lines)
+| Order | # | Item | Files | §11 lines it turns green |
+|---|---|---|---|---|
+| 1 | 26 | **One system on every page** (absorbs 17b). The scale, radii and measure of §6 as `--t-*` and `--r-*` tokens; every px literal for a size or radius replaced; card rows of 2, 3 or 4 that never orphan; h1 72 / 40 px. | `assets/site.css`; the `<style>` block and `style=` attributes of all six `src/*.html`; inline sizes emitted by `tools/build.py` and `tools/mcp.py`; `tools/check.py` | 10: `S1 <page> at 1440 px` and `S1 <page> at 390 px` for `/`, `/websocket/`, `/examples/`, `/ai/`, `/mcp/`. D5. |
+| 2 | 27 | **Every page opens on its object** (absorbs 12b). The same page start everywhere, then the `data-object` of §5: monitor, console, agent session (config and three calls, built from `mcp/schema.json`), first snippet, search box above the router. Entries on `/websocket/` and `/mcp/` are closed `<details>`; on `/` the beta files and the older ledger entries close. | Markup of `src/index.html`, `websocket.html`, `mcp.html`, `examples.html`, `ai.html`; entry templates in `tools/build.py` (`<article>`, about line 539) and `tools/mcp.py` (about line 299); dock layout in `assets/site.css`; `tools/check.py` | 10: `S2 <page> at 1440 px` and `S2 <page> at 390 px` for the five pages. Must keep `B / with JS off` (six stable files and hashes stay open) and `B /websocket/ with JS off` (each `summary` carries the `id`). D6. |
+| 3 | 28 | **The finish: pictures and motion** (absorbs 7). One more real capture on `/` beside its ledger entry (upstream `docs/images/gpu-status-red.png`, 194 KB, re-encoded like the hero) with a receipt; the generated social card; the two logo PNGs gone; the four motions of §6. | `assets/site.css` (one transition rule, two or three `@keyframes`); `src/index.html` (bar, second figure); `tools/build.py` (capture, card, `og:image` at about line 581); `tools/models.py`; `assets/*.png`; `tools/check.py` | 8: `S3 <page> eases` for the five pages, `S3 / pictures`, `S3 the social card`, `S3 / motion`. `S3 / with reduced motion` and `S3 site.css` are green now and must stay so, as must `S2 /` (length). |
+| 3, parallel | 29 | **A console that plays.** The replay and the conversation log of §9. | `src/websocket.html`; `src/replay.json` (new); `tools/build.py` (inline and validate the transcript); `tools/models.py` (its model); `tools/check.py` | 1: `S4 /websocket/#demo` (ops 0, 2, 6 and 7 in `#log`; "recorded" or "scripted" with the release tag; `#st` not "connected"). D8. |
 
-These five stand between the site and an LGTM as much as P0 does. One focused PR each.
-
-| # | Item | Acceptance check |
-|---|---|---|
-| 26 | **One system on every page** (type, rhythm, consistency; absorbs 17b). The scale, radii, measure and page start of §6 as tokens in `site.css`; no page `<style>`; card rows of 2, 3 or 4 that never orphan. | S1: on five pages at 1440 and 390 px every font size is on the scale, radii are 4 px, 6 px or 50%, no paragraph is over 40 em, no grid ends in a lone card, h1 is 72 / 40 px. No `<style` in `_site/**/*.html`. D5. |
-| 27 | **Every page opens on its object** (imagery, density; absorbs 7 and 12b). The `data-object` of §5 in the first screen; entries on `/websocket/` and `/mcp/` closed by default; one more real capture on `/` beside its ledger entry (upstream `docs/images/gpu-status-red.png` is a candidate) with a receipt; mascot on `/ai/` and the 404; generated social card; the unused logo deleted. | S2: the object starts within 0.6 screens at 1440 px (0.85 at 390 px) and is 560 px (330 px) or wider; page lengths within §8; two pictures of 300 px or more on `/`; an image of 160 px or more on the first screen of `/ai/` and the 404; `og:image` is 1200x630 under 200 KB. D6. |
-| 28 | **Motion with a job.** The four motions of §6 and no other. | S3: 90% or more of visible links, buttons and summaries on every page have a transition; 1 to 6 elements animate on `/`, none under `--force-prefers-reduced-motion`. D7. |
-| 29 | **A console that plays** (absorbs 19). The replay, the conversation log and the typed form of §9. | S4: `/websocket/#demo` shows frames with ops 0, 2, 6 and 7, says "recorded ... obs-studio-rust-v<n>", and `#st` does not read "connected". An empty required field blocks Send with a message; `localStorage` never holds the password. D8. |
-| 30 | **Search that answers.** Word matching, ranking, result cards, example queries, live count and `/` focus of §7. | A8: the first hit, whatever it links, for "install on windows" is the site's download text, for `SetInputSettings` and `wait_for` their typed chunk. S5: four or more example queries; `/` focuses `#q`; three or more hits, the first five 200 px or less each with a button; `#meta` is `aria-live` and holds the count. D9. |
+**Conflicts.** #26 rewrites every page's `<style>` (including the px literals #18 just added
+to `src/ai.html`), so nothing runs beside it. #27 moves the markup #26 restyled and docks the
+console #29 fills, so it follows #26 and precedes #29; #28 adds a picture to the page whose
+length #27 sets. #28 and #29 may run in parallel: #29 owns `src/websocket.html`, #28 owns
+`site.css` and `src/index.html` (the tally's pulse is a `site.css` class that #29 only
+toggles), and both only append to `build.py`, `models.py` and `check.py`; the second to merge
+rebases. Every other pair is serial.
 
 ### P1: depth (does not gate the LGTM)
 
 | # | Item | Acceptance check |
 |---|---|---|
+| 19 | **Typed "Try" form** from `requestFields`; a missing required field disables Send and says why. | An empty required field blocks Send with a message; `localStorage` never holds the password. |
 | 6 | **Gate v2**: every §11 check, S included, in `check.py` on `_site/` (the probe runs on local files); a post-deploy step in the existing job runs §11 A1. | `check.py` exits non-zero for each of: a table wider than its page, 11 px text, a 14 px font size, a relative chunk `url`, a banned phrase, a limit whose pattern is gone; the deploy job fails if `/llms.txt` is not 200 `text/plain` or `/nope` is not 404. |
 | 4b | **Home in order**: one headline figure; proof strip of four receipts without "Forks"; ledger preview leads with fixed bugs; a copy control per hash; the WebSocket-or-MCP table. | One figure carries the hero numeral style; "N requests", "N events" and "N typed tools" equal `protocol.json` and `mcp/schema.json`. |
 | 2b, 1, 15 | **Corpus residue and search index**: prose `url` ends in its heading's `#anchor`; no prose chunk under 300 characters; hall of fame out of `core`; `c-symbol` chunks; deterministic output; `/ai/search.json`; `tools/eval_corpus.py`. | No prose `url` without `#`; one `c-symbol` chunk per Sphinx directive; two builds from the same inputs give a byte-identical `corpus.json` apart from the timestamp; the first search transfers under 150 KB gzipped; 90% of 30 or more checked-in questions have the expected chunk in the top 5. |
@@ -245,16 +252,15 @@ These five stand between the site and an LGTM as much as P0 does. One focused PR
 
 20 `/websocket/obs-websocket.d.ts` (`tsc --noEmit` accepts it). 21 `/libobs/` symbol index (every
 `c-symbol` id resolves). 22 topic bundles `/ai/bundles/*.txt` (sizes in `llms.txt`). 23 MCP
-`packages` in `server.json` (URL and hash equal a release asset and its `SHA256SUMS` line).
-24 contributor strip (equals `leaderboard.json`). 25 `/releases.xml` and a launch-speed figure
-(read from JSON, never from prose).
+`packages` in `server.json` (URL and hash equal a release asset and its `SHA256SUMS` line). 24
+contributor strip (equals `leaderboard.json`). 25 `/releases.xml`; a launch-speed figure from JSON.
 
 ## 11. The done bar
 
 The judge works on the **live site** only; nothing is taken from a build log, a PR or this
 document's brackets. Verdict: **LGTM** when the script prints no `FAIL` line, all three trials
-in C pass, at most one of D1 to D4 fails and at most one of D5 to D9 fails; otherwise **FAIL:**
-and the failed lines. Budget 10 minutes: the script ran in 1 min 18 s to 1 min 42 s (killed, and failed, at
+in C pass, at most one of D1 to D4 fails and at most one of D5, D6, D8 and D9 fails; otherwise
+**FAIL:** and the failed lines. Budget 10 minutes: the script ran in 1 min 41 s and 1 min 42 s (killed, and failed, at
 9 min); C's trials run in parallel in about five; D takes four. The script needs only `bash`,
 `curl`, `jq` and the Chromium at `~/.hermes/tools/chromium-1208/chrome-linux64/chrome`, and
 samples nothing at random: two runs against one deploy print the same lines.
@@ -277,12 +283,12 @@ d.dispatchEvent(new W.KeyboardEvent('keydown',{key:'/',bubbles:true}));
 const r={w:W.innerWidth,overflow_px:d.documentElement.scrollWidth-W.innerWidth,small_text:text.filter(e=>!e.children.length&&px(e)<12).length,small_controls:q('button,summary,input,select,header a,nav a').filter(e=>vis(e)&&(box(e).width<24||box(e).height<24)).length,
  nav_clipped:q('header a,nav a').filter(e=>vis(e)&&!e.closest('footer')&&(box(e).right>w+1||box(e).left<-1)).length,hero_w:hero?Math.round(box(hero).width):0,hero_bottom_vh:hero?+(box(hero).bottom/h).toFixed(2):9,cta:cta?cta.innerText.trim():'',
  dl_links:q('a[href*="/releases/download/"]').filter(vis).length,hashes:(d.body.innerText.match(/\b[0-9a-f]{64}\b/g)||[]).length,ids:q("[id]").filter(vis).length,line_receipts:q('a[href*="/blob/"][href*="#L"]').map(a=>({href:a.href,text:a.parentElement.innerText.replace(/\s+/g,' ')})),
- third_party:W.performance.getEntriesByType('resource').map(e=>e.name).filter(n=>!/^(https:\/\/obs-rust\.com\/|file:)/.test(n)),sizes:uniq(text.map(e=>Math.round(px(e)*100)/100)).sort((a,b)=>a-b),h1:(e=>e?px(e):0)(q('h1').filter(vis)[0]),
- radii:uniq(q('body *').filter(vis).map(e=>cs(e).borderTopLeftRadius).filter(r=>r!='0px')).sort(),measure:Math.round(Math.max(0,...q('p,li').filter(e=>vis(e)&&e.innerText.length>120).map(e=>box(e).width/px(e)))),
+ third_party:W.performance.getEntriesByType('resource').map(e=>e.name).filter(n=>!/^(https:\/\/obs-rust\.com\/|file:)/.test(n)),sizes:uniq(text.filter(e=>e.isConnected).map(e=>Math.round(px(e)*100)/100)).sort((a,b)=>a-b),h1:(e=>e?px(e):0)(q('h1').filter(vis)[0]),
+ radii:uniq(q('body *').filter(vis).map(e=>cs(e).borderTopLeftRadius).filter(r=>r!='0px')).sort(),measure:Math.round(Math.max(0,...q('p,li').filter(e=>vis(e)&&px(e)>=15&&e.innerText.length>120).map(e=>box(e).width/px(e)))),
  orphans:q('body *').filter(e=>vis(e)&&cs(e).display=='grid'&&e.children.length>3).filter(e=>{const t=[...e.children].filter(vis).map(c=>Math.round(box(c).top)); return t.filter(x=>x==t[0]).length>2&&t.filter(x=>x==t[t.length-1]).length==1}).length,
  screens:+(d.documentElement.scrollHeight/h).toFixed(1),obj_top:obj?+(box(obj).top/h).toFixed(2):9,obj_w:obj?Math.round(box(obj).width):0,easing:act.length?+(act.filter(e=>cs(e).transitionDuration!='0s').length/act.length).toFixed(2):0,anim:q('body *').filter(e=>vis(e)&&cs(e).animationName!='none').length,
- art:img.filter(e=>box(e).width>=160&&box(e).top<h).length,pictures:img.filter(e=>box(e).width>=300).length,slash:d.activeElement?d.activeElement.id:'',hits:hit.length,hit_h:Math.round(Math.max(0,...hit.slice(0,5).map(e=>box(e).height))),hit_first:(a=>a?a.href:'')(d.querySelector('#hits a[href]')),
- hit_copy:hit.slice(0,5).filter(e=>e.querySelector('button')).length,tries:q('a[href*="#q="]').filter(vis).length,count:txt('#meta[aria-live]'),ops:uniq(q('#log [data-op]').map(e=>+e.dataset.op)).sort(),state:txt('#st'),recorded:(txt('#console').match(/recorded[^\n]*obs-studio-rust-v[\d.]+/i)||[''])[0]};
+ pictures:img.filter(e=>box(e).width>=300).length,slash:d.activeElement?d.activeElement.id:'',hits:hit.length,hit_h:Math.round(Math.max(0,...hit.slice(0,5).map(e=>box(e).height))),hit_first:(a=>a?a.href:'')(d.querySelector('#hits a[href]')),
+ hit_copy:hit.slice(0,5).filter(e=>e.querySelector('button')).length,tries:q('a[href*="#q="]').filter(vis).length,count:txt('#meta[aria-live]'),ops:uniq(q('#log [data-op]').map(e=>+e.dataset.op)).sort(),state:txt('#st'),recorded:(txt('#console').match(/(recorded|scripted)[^\n]*obs-studio-rust-v[\d.]+/i)||[''])[0]};
 document.body.innerHTML='<pre>'+JSON.stringify(r).replace(/</g,'&lt;')+'</pre>'},H?6000:2500);
 </script>
 ```
@@ -360,34 +366,46 @@ HERO='(select(.hero_w<MINW or .hero_bottom_vh>1)|"largest image on the first scr
 want "B / first screen at 1440 px" "/ 1440 900" "${HERO/MINW/640}"; want "B / first screen at 390 px" "/ 390 844" "${HERO/MINW/330}"
 want "B / with JS off" "/ 1440 900 1" '(select(.dl_links<6 or .hashes<6)|"\(.dl_links) download links and \(.hashes) SHA-256 on the page")'
 want "B /websocket/ with JS off" "/websocket/ 1440 900 1" "(select(.ids<$(jq '(.requests|length)+(.events|length)' p.json))|\"only \(.ids) anchored entries are visible\")"; get /assets/site.css | grep -q ':focus-visible' || fail "B site.css has no :focus-visible ring"
-# S craft, measured: one system on every page (S1), each page opens on its object (S2), motion (S3), console (S4), search (S5)
+# S craft, measured, one line per item and page: S1 one system (#26), S2 the object leads (#27), S3 pictures and motion (#28), S4 console (#29), S5 search (#30)
 SCALE='[12,13,15,17,19,22,30,40,52,72,96]'; RAD='["4px","6px","50%"]'
-S1="(select(.sizes-$SCALE|length>0)|\"type sizes off the scale: \(.sizes-$SCALE|map(tostring)|join(\" \"))\"),(select(.radii-$RAD|length>0)|\"radii off the system: \(.radii-$RAD|join(\" \"))\"),(select(.measure>40)|\"a paragraph runs \(.measure) em wide\"),(select(.orphans>0)|\"\(.orphans) card grids end in a lone card\"),(select(.easing<0.9)|\"\(.easing*100|round)% of links and buttons ease\")"
-S2='(select(.h1!=H1)|"h1 is \(.h1) px, not H1"),(select(.obj_top>TOP or .obj_w<MINW)|"its object ([data-object]) starts \(.obj_top) screens down, \(.obj_w) px wide"),(select(.screens>MAX)|"\(.screens) screens long, over MAX")'
-s2(){ x=${S2//H1/$1}; x=${x//TOP/$2}; x=${x//MINW/$3}; echo "${x//MAX/$4}"; }; while read -r p m1 m2; do want "S1-2 $p at 1440 px" "$p 1440 900" "$S1,$(s2 72 0.6 560 $m1)"; want "S1-2 $p at 390 px" "$p 390 844" "$S1,$(s2 40 0.85 330 $m2)"; done <<'T'
-/ 6 11
+S1="(select(.sizes-$SCALE|length>0)|\"type sizes off the scale: \(.sizes-$SCALE|map(tostring)|join(\" \"))\"),(select(.radii-$RAD|length>0)|\"radii off the system: \(.radii-$RAD|join(\" \"))\"),(select(.measure>40)|\"body text runs \(.measure) em wide\"),(select(.orphans>0)|\"\(.orphans) card grids end in a lone card\"),(select(.h1!=H1)|\"h1 is \(.h1) px, not H1\")"
+S2='(select(.obj_top>TOP or .obj_w<MINW)|"its object ([data-object]) starts \(.obj_top) screens down, \(.obj_w) px wide"),(select(.screens>MAX)|"\(.screens) screens long, over MAX")'
+s2(){ x=${S2//TOP/$1}; x=${x//MINW/$2}; echo "${x//MAX/$3}"; }; while read -r p m1 m2; do want "S1 $p at 1440 px" "$p 1440 900" "${S1//H1/72}"; want "S1 $p at 390 px" "$p 390 844" "${S1//H1/40}"; want "S2 $p at 1440 px" "$p 1440 900" "$(s2 0.6 560 $m1)"; want "S2 $p at 390 px" "$p 390 844" "$(s2 0.85 330 $m2)"
+  want "S3 $p eases" "$p 1440 900" '(select(.easing<0.9)|"\(.easing*100|round)% of links, buttons and summaries have a transition, want 90%")'; done <<'T'
+/ 6.5 12
 /websocket/ 15 30
-/examples/ 6 9
-/ai/ 4.5 9
+/examples/ 7 10
+/ai/ 5 10
 /mcp/ 10 18
 T
-want "S2 / pictures" "/ 1440 900" '(select(.pictures<2)|"\(.pictures) real pictures 300 px or wider, want 2")'; for p in /ai/ /nope; do want "S2 $p mascot" "$p 1440 900" '(select(.art<1)|"no image 160 px or wider on the first screen")'; done
-og=$(grep -oE 'property="og:image" content="[^"]*' home.html | cut -d'"' -f4); curl -s -m 60 "$og" -o og.png; [ "$(od -An -tu1 -j16 -N8 og.png | awk '{print $1*16777216+$2*65536+$3*256+$4 "x" $5*16777216+$6*65536+$7*256+$8}')" = 1200x630 ] && [ "$(wc -c < og.png)" -le 200000 ] || fail "S2 the social card is not a 1200x630 PNG under 200 KB"
+want "S3 / pictures" "/ 1440 900" '(select(.pictures<2)|"\(.pictures) real pictures 300 px or wider, want 2")'
+og=$(grep -oE 'property="og:image" content="[^"]*' home.html | cut -d'"' -f4); curl -s -m 60 "$og" -o og.png; [ "$(od -An -tu1 -j16 -N8 og.png | awk '{print $1*16777216+$2*65536+$3*256+$4 "x" $5*16777216+$6*65536+$7*256+$8}')" = 1200x630 ] && [ "$(wc -c < og.png)" -le 200000 ] || fail "S3 the social card is not a 1200x630 PNG under 200 KB"
 want "S3 / motion" "/ 1440 900" '(select(.anim<1 or .anim>6)|"\(.anim) animated elements, want 1 to 6")'   # 901 below: a second cache key
 XF=--force-prefers-reduced-motion want "S3 / with reduced motion" "/ 1440 901" '(select(.anim>0)|"\(.anim) elements still animate")'
-want "S4 /websocket/#demo" "/websocket/ 1440 900 0 demo" '(select([0,2,6,7]-.ops|length>0)|"the replay shows ops \(.ops|map(tostring)|join(" ")), want 0 2 6 7"),(select(.recorded=="")|"the replay does not say recorded, from which release"),(select(.state|test("^connected";"i"))|"the tally claims a live connection")'
+kf=$(get /assets/site.css | grep -o '@keyframes' | wc -l); inf=$(get /assets/site.css | grep -o 'infinite' | wc -l); pk=$(for p in $PAGES /nope; do get $p; done | grep -c '@keyframes')
+[ "$kf" -le 3 ] && [ "$inf" -le 1 ] && [ "$pk" = 0 ] || fail "S3 site.css: $kf @keyframes (at most 3), $inf that repeat (at most 1), $pk pages with their own (0)"
+want "S4 /websocket/#demo" "/websocket/ 1440 900 0 demo" '(select([0,2,6,7]-.ops|length>0)|"the replay shows ops \(.ops|map(tostring)|join(" ")), want 0 2 6 7"),(select(.recorded=="")|"the replay does not say recorded or scripted, and from which release"),(select(.state|test("^connected";"i"))|"the tally claims a live connection")'
 want "S5 /ai/ idle" "/ai/ 1440 900" '(select(.slash!="q")|"/ does not focus the search box"),(select(.tries<4)|"\(.tries) example queries offered, want 4")'
 want "S5 /ai/ results" "/ai/ 1440 900 0 q=install%20on%20windows" '(select(.hits<3 or .hit_h>200)|"\(.hits) hits, the tallest of the first five \(.hit_h) px, over 200"),(select(.hit_copy<5)|"\(.hit_copy) of the first five hits have a copy button"),(select(.count|test("[0-9]")|not)|"no aria-live result count")'
 # D pictures for the judge, in shots/ (the live page in a frame of the stated size)
-shoot home-1440 / 1440 900; shoot home-390 / 390 844; shoot examples-1440 /examples/ 1440 900; shoot mcp-390 /mcp/ 390 844; shoot console-1440 /websocket/ 1440 900 demo; shoot search-1440 /ai/ 1440 900 q=install%20on%20windows
+shoot home-1440 / 1440 900; shoot home-390 / 390 844; shoot examples-1440 /examples/ 1440 900; shoot mcp-390 /mcp/ 390 844; shoot console-1440 /websocket/ 1440 900 demo; shoot search-1440 /ai/ 1440 1400 q=install%20on%20windows
 ```
 
-**What changed from Revision 5's script.** *Wrong:* A8 dropped GitHub links before taking the
-"first" hit, so it passed while the first result on screen was a CI note; it now reads the
-first hit as rendered. *Faster:* probes are cached and link checks run six at a time (2 min
-27 s became 1 min 42 s or less). *Added:* section S, which turns §6 into measurements, and six
-pictures for D. The probe frames a local copy of the live page with `history.replaceState`
-neutralised (a `file:` frame may not rewrite its URL); nothing else is altered.
+**What changed from Revision 6's script** (an audit of S and D; A, B and S5 are as they were).
+*Entangled:* an `S1-2` line needed #26, #27 and #28 together; it is now `S1`, `S2` and
+`S3 … eases`, one item each. *Flaky:* the `/` key makes `/ai/` redraw, and the probe read a
+detached element as a `null` size; it skips those. *Unreachable or on a knife edge:*
+`/examples/` sat at its 6-screen limit and `/ai/` 0.4 under, so they get 7 / 10 and 5 / 10,
+and `/` 6.5 / 12; a 12 px receipt line failed the 40 em measure, which now reads body text
+only; D9 asked for five results in a 900 px frame that fits two, so its picture is 1400 px
+tall and it asks for three; a replay nobody recorded could pass only by saying "recorded",
+so "scripted" passes too. *Not worth their cost:* the mascot checks (no small mascot exists,
+and a 160 px robot would compete with the search box), the ban on any page `<style>` and
+the typed form (item 19). *Not for an eye:* D7 read CSS and is now the `S3 site.css` line;
+D5 and D6 no longer ask the judge to count sizes or measure bands, which S1 and S2 do.
+*Verified:* `--force-prefers-reduced-motion` switches the media query in this Chromium, in a
+frame too. The probe frames a local copy of the live page with `history.replaceState`
+neutralised (a `file:` frame may not rewrite its URL).
 
 **C. Cold trials.** Each is one fresh sub-agent with a fetch tool, no repository and no prior
 context, three fetches per question; the judge checks the answer against the named source.
@@ -418,23 +436,19 @@ named criteria, not from the S lines, which already count.
 4. Does colour carry only the meanings of §6: hazard marks real cautions (beta, unsigned, the
    permission-skipping prompt, a replay); the tally is unlit unless the console is connected?
 5. **One hand.** `home-1440.png` beside `examples-1440.png`, and `home-390.png` beside
-   `mcp-390.png`: in each pair, are the header, the gap from header to eyebrow, the h1's size
-   and left edge, and the lede's size the same, with at most four text sizes besides the h1?
-6. **The object leads.** In each of the six pictures, is the largest thing on screen the
+   `mcp-390.png`: does each pair read as two pages of one site: the same header, the same
+   start (eyebrow, h1, lede) at the same left edge and weight, the same plates and buttons?
+6. **The object leads.** In each of the six pictures, is the first thing the eye lands on the
    page's object (the app, the console with traffic, the search box with results, the agent
-   session, a runnable snippet), readable, with no decoration larger than it and no blank
-   band above it taller than a tenth of the screen?
-7. **Motion has a job.** In `curl https://obs-rust.com/assets/site.css`: does every
-   `@keyframes` serve one of the four motions of §6, does none but the tally's repeat, and
-   is every animation 1.2 s or shorter and every transition 180 ms or shorter?
-8. **The console plays.** In `console-1440.png` (`/websocket/#demo`, nothing connected): could
+   session, a runnable snippet), readable, with nothing decorative larger than it?
+8. (D7 is retired: S3 measures motion.) **The console plays.** In `console-1440.png` (`/websocket/#demo`, nothing connected): could
    someone new to obs-websocket follow the exchange: four or more frames, each with direction,
-   op name and indented JSON; "recorded" with a release tag; the tally unlit; a reference
-   entry visible beside or below the console?
-9. **Search answers.** In `search-1440.png` ("install on windows"): is the first result the
-   Windows download, naming a file or a command; are five or more results on screen, each
-   with kind, title, breadcrumb and a marked snippet of two lines or fewer; and are the
-   result count and a copy control visible?
+   op name and indented JSON; "recorded" or "scripted" with a release tag, in the caution
+   colour; the tally unlit; a reference entry visible beside or below the console?
+9. **Search answers.** In `search-1440.png` ("install on windows", a 1400 px tall frame): does
+   the first result read as the answer (the site's download or install text, not a CI note);
+   are three or more results on screen, each with kind, title, breadcrumb and a marked
+   snippet of two lines or fewer; and are the result count and a copy control visible?
 
 ## 12. Non-goals
 

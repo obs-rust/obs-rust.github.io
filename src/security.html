@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head:Security tracker — obs-rust coordinated disclosure|How to report a vulnerability in obs-studio-rust, where every reported advisory stands, the encrypted disclosure archives shared with the OBS Project, and the published advisories.}}
+<style>
+/* hero: the pitch left, the status board right */
+.shero{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:var(--s-6);align-items:start}
+.shero .lede{margin-bottom:var(--s-3)}
+.shero .actions{margin-top:0}
+.shero .fine{margin-top:var(--s-3);font-size:var(--t-15);color:var(--dim)}
+@media(max-width:940px){.shero{grid-template-columns:minmax(0,1fr);gap:var(--s-3)}.shero>div:first-child{display:contents}
+  .shero .eyebrow{justify-self:start;margin-bottom:0}.shero h1,.shero .lede{margin-bottom:0}.board{order:1}.shero .fine{order:2;margin-top:0}}
+
+/* the status board: the page's object */
+.board{position:relative;overflow:hidden;padding:0 0 var(--s-3)}
+.board::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(600px 260px at 85% 0,rgba(242,183,5,.07),transparent 70%)}
+.board .hazard{height:8px;border-radius:var(--r-plate) var(--r-plate) 0 0}
+.bhead{display:flex;align-items:center;gap:10px;padding:14px var(--s-3) 0;font:700 var(--t-12) var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--fg2)}
+.bhead .src{margin-left:auto;color:var(--dim);letter-spacing:.08em;white-space:nowrap}
+.lock{width:9px;height:9px;border-radius:var(--r-light);background:var(--haz);box-shadow:0 0 10px rgba(242,183,5,.7)}
+.big{display:flex;align-items:flex-end;gap:var(--s-2);padding:var(--s-2) var(--s-3) 0}
+.big b{font:900 var(--t-96)/.8 var(--stencil);color:var(--fg);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.big span{font:600 var(--t-17)/1.25 var(--sans);color:var(--fg2);padding-bottom:6px}
+.chips{display:grid;gap:8px;padding:var(--s-2) var(--s-3) 0}
+.chip{display:flex;align-items:baseline;gap:10px;font-size:var(--t-15);color:var(--fg2);max-width:none}
+.chip b{font:800 var(--t-22)/1 var(--stencil);min-width:2ch;text-align:right}
+.chip.emb b{color:var(--haz)}.chip.pub b{color:var(--cu-hi)}
+.board .sevwrap{padding:var(--s-3) var(--s-3) 0}
+.board .receipt{padding:0 var(--s-3);margin-top:var(--s-2)}
+
+/* severity: a stacked bar in one hue of caution, steel for low */
+.sevbar{display:flex;height:12px;border-radius:var(--r-ctl);overflow:hidden;border:1px solid #000;background:#0a0b0c;box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
+.sevbar.lg{height:40px}
+.sevbar i{display:flex;align-items:center;justify-content:center;min-width:0;font:700 var(--t-13) var(--mono);font-style:normal;color:#141006;overflow:hidden;white-space:nowrap}
+.sevbar i+i{box-shadow:inset 1px 0 0 rgba(0,0,0,.55)}
+.s-critical{--sw:repeating-linear-gradient(-45deg,var(--haz) 0 8px,#111 8px 16px)}
+.s-high{--sw:linear-gradient(180deg,#ffd23f,var(--haz) 55%,#b98b00)}
+.s-medium{--sw:linear-gradient(180deg,#a8842a,#7a5f14)}
+.s-low{--sw:linear-gradient(180deg,#b6c0ca,#6f7a85)}
+.sevbar i{background:var(--sw)}
+.sevbar .s-medium{color:#f4ead0}
+.sevlegend{list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin-top:var(--s-2);background:var(--edge);border:1px solid var(--edge);border-radius:var(--r-ctl);overflow:hidden}
+.sevlegend li{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"sw nm" "n n" "p p";gap:2px 8px;align-items:center;padding:10px 12px;background:var(--bg2)}
+.sevlegend li i{grid-area:sw;width:12px;height:12px;border-radius:var(--r-ctl);background:var(--sw);border:1px solid #000}
+.sevlegend li span{grid-area:nm;font:700 var(--t-12) var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.sevlegend li b{grid-area:n;font:800 var(--t-30)/1 var(--stencil);color:var(--fg)}
+.sevlegend li em{grid-area:p;font:500 var(--t-12) var(--mono);font-style:normal;color:var(--dim)}
+.sevlegend li.s-critical b{color:var(--dim)}
+@media(max-width:560px){.sevlegend{grid-template-columns:repeat(2,minmax(0,1fr))}.big b{font-size:var(--t-72)}}
+
+/* pipeline: five stations on one rail */
+.pipe{list-style:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin-top:var(--s-5);border:1px solid var(--edge);border-radius:var(--r-plate);background:linear-gradient(180deg,var(--plate2),var(--plate));overflow:hidden}
+.stn{position:relative;display:grid;grid-template-areas:"k" "nm" "n" "c";align-content:start;gap:4px;padding:var(--s-3);border-left:1px solid var(--edge);max-width:none}
+.stn:first-child{border-left:0}
+.stn::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--edge2)}
+.stn:not(:last-child)::after{content:"";position:absolute;right:-9px;top:var(--s-3);z-index:2;width:16px;height:16px;border-top:1px solid var(--edge2);border-right:1px solid var(--edge2);background:var(--plate);transform:rotate(45deg)}
+.stn .k{grid-area:k;font:700 var(--t-12) var(--mono);letter-spacing:.2em;color:var(--dim)}
+.stn .nm{grid-area:nm;font:700 var(--t-17)/1.1 var(--cond);letter-spacing:.04em;text-transform:uppercase;color:var(--fg)}
+.stn b{grid-area:n;font:900 var(--t-52)/1 var(--stencil);color:var(--fg2);margin-top:6px;font-variant-numeric:tabular-nums}
+.stn .c{grid-area:c;font:500 var(--t-13) var(--mono);color:var(--dim)}
+.stn.emb::before{background:repeating-linear-gradient(-45deg,var(--haz) 0 6px,#111 6px 12px)}
+.stn.emb b{color:var(--haz)}
+.stn.up{background:linear-gradient(180deg,rgba(232,99,26,.14),rgba(232,99,26,.03))}
+.stn.up::before{background:var(--rust)}
+.stn.up b{color:var(--rust-hi)}
+.stn.pub::before{background:var(--cu)}
+.stn.pub b{color:var(--cu-hi)}
+@media(max-width:900px){
+  .pipe{grid-template-columns:minmax(0,1fr)}
+  .stn{grid-template-areas:"k nm n" "k c n";grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:0 var(--s-2);padding:14px var(--s-2);border-left:0;border-top:1px solid var(--edge)}
+  .stn:first-child{border-top:0}
+  .stn::before{left:0;top:0;bottom:0;right:auto;width:3px;height:auto}
+  .stn:not(:last-child)::after{display:none}
+  .stn b{margin:0;font-size:var(--t-40)}
+}
+
+/* process */
+.steps{list-style:none;counter-reset:s}
+.steps li{display:flex;flex-direction:column;gap:10px;padding:var(--s-3);max-width:none}
+.steps .k{font:700 var(--t-12) var(--mono);letter-spacing:.2em;color:var(--rust)}
+.steps h3{font-size:var(--t-19)}
+.steps p{color:var(--fg2);font-size:var(--t-15)}
+.steps .receipt{margin-top:auto;padding-top:var(--s-1)}
+
+/* archives: timeline beside the vault */
+.arch{display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--s-5);margin-top:var(--s-4);align-items:start}
+@media(max-width:940px){.arch{grid-template-columns:minmax(0,1fr)}}
+.tl{list-style:none;position:relative;display:grid;gap:var(--s-3);padding-left:24px}
+.tl::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,var(--edge2),var(--edge))}
+.tl li{position:relative;display:grid;gap:2px;max-width:none}
+.tl li::before{content:"";position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:var(--r-light);background:var(--edge2);box-shadow:0 0 0 3px var(--bg0)}
+.tl li.arc::before{background:var(--rust);box-shadow:0 0 0 3px var(--bg0),0 0 14px rgba(232,99,26,.7)}
+.tl li.pub::before{background:var(--cu-hi);box-shadow:0 0 0 3px var(--bg0),0 0 12px rgba(98,209,177,.5)}
+.tl li.now::before{background:var(--bg0);border:2px solid var(--fg2)}
+.tl time{font:700 var(--t-12) var(--mono);letter-spacing:.12em;color:var(--dim)}
+.tl b{font:700 var(--t-15) var(--sans);color:var(--fg)}
+.tl a{display:block;font:500 var(--t-13) var(--mono)}
+.tl .tag{align-self:flex-start;margin:4px 0 0}
+.tl p{font-size:var(--t-13);color:var(--dim);margin-top:2px}
+
+.tl .muted{display:block;font-size:var(--t-13)}
+
+.vault{display:grid;grid-template-columns:200px minmax(0,1fr);overflow:hidden;box-shadow:0 0 0 1px rgba(232,99,26,.25),0 30px 60px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05)}
+.vault+.vault{margin-top:var(--s-3)}
+.seal{display:flex;flex-direction:column;gap:10px;padding:var(--s-3);border-right:1px solid var(--edge);
+  background:repeating-linear-gradient(-45deg,rgba(255,255,255,.025) 0 2px,transparent 2px 7px),linear-gradient(180deg,#141618,#0d0f10)}
+.seal .no{font:900 var(--t-72)/.85 var(--stencil);color:var(--rust);text-shadow:0 0 30px rgba(232,99,26,.35)}
+.seal .when{font:500 var(--t-13)/1.5 var(--mono);color:var(--fg2)}
+.seal .tag{margin-top:auto;align-self:flex-start}
+.vbody{display:grid;gap:var(--s-2);padding:var(--s-3);min-width:0}
+.vbody h3{display:grid;gap:4px;font:600 var(--t-15) var(--mono);text-transform:none;letter-spacing:0}
+.vbody .fn{color:var(--fg);word-break:break-all}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--edge);border:1px solid var(--edge);border-radius:var(--r-ctl);overflow:hidden}
+.facts div{background:var(--bg2);padding:10px 12px}
+.facts dt{font:700 var(--t-12) var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.facts dd{font:800 var(--t-30)/1.05 var(--stencil);color:var(--fg)}
+.hash{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:var(--s-2);align-items:center;padding:12px 14px;border:1px solid var(--edge);border-radius:var(--r-ctl);background:#0a0b0c}
+.hash .sha{font:500 var(--t-13)/1.45 var(--mono);color:var(--cu-hi);word-break:break-all;user-select:all;background:none;border:0;padding:0}
+.cp{min-height:32px;padding:6px 12px;font:700 var(--t-12) var(--mono);letter-spacing:.08em;text-transform:uppercase;background:var(--plate2);color:var(--fg2);border:1px solid var(--edge2);border-radius:var(--r-ctl);cursor:pointer}
+.cp:hover{color:var(--fg);border-color:var(--fg2)}
+.cp.ok{color:var(--cu-hi);border-color:var(--cu)}
+.vbody .actions{margin-top:0;align-items:center}
+.dlnote{font:500 var(--t-13) var(--mono)}
+@media(max-width:700px){
+  .vault{grid-template-columns:minmax(0,1fr)}
+  .seal{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px var(--s-2);border-right:0;border-bottom:1px solid var(--edge)}
+  .seal .label{flex-basis:100%}
+  .seal .tag{margin:0 0 0 auto}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hash{grid-template-columns:minmax(0,1fr) auto}.hash .label{grid-column:1/-1}
+}
+.open{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s-2);margin-top:var(--s-3)}
+.open .step{display:flex;flex-direction:column;gap:10px;padding:var(--s-3)}
+.open h3{font-size:var(--t-19)}
+.open p{font-size:var(--t-15)}
+.open pre{margin-top:var(--s-1);padding-top:40px}
+.open pre .c{color:#6b737a}
+@media(max-width:800px){.open{grid-template-columns:minmax(0,1fr)}}
+.caution{margin-top:var(--s-3);padding:12px 14px;border:1px solid rgba(242,183,5,.5);border-left:4px solid var(--haz);border-radius:var(--r-ctl);background:rgba(242,183,5,.06);font-size:var(--t-15)}
+.caution b{color:var(--haz);font:700 var(--t-12) var(--mono);letter-spacing:.14em;text-transform:uppercase;margin-right:8px}
+
+/* published advisories */
+.adv{margin-top:var(--s-3);border:1px solid var(--edge);border-radius:var(--r-plate);background:var(--plate)}
+.adv table{min-width:820px}
+.adv td{font-size:var(--t-15)}
+.adv tbody tr:hover{background:rgba(255,255,255,.02)}
+.adv .ghsa{font:700 var(--t-13) var(--mono);white-space:nowrap}
+.adv td p{color:var(--fg2);margin-top:4px;font-size:var(--t-15)}
+.adv td.num{font:800 var(--t-22)/1 var(--stencil);color:var(--fg)}
+.adv td.cve{white-space:nowrap}
+.adv td.date{font:500 var(--t-13) var(--mono);white-space:nowrap;color:var(--fg2)}
+.adv abbr{font:500 var(--t-13) var(--mono);text-decoration:underline dotted}
+.tag.sev{color:#141006;border-color:#000;background:var(--sw)}
+.tag.sev.s-medium{color:#f4ead0}
+.sub{margin-top:var(--s-1);color:var(--fg2)}
+@media(max-width:700px){
+  .adv table{min-width:0}.adv thead{display:none}.adv tr,.adv td{display:block}
+  .adv tr{padding:var(--s-1) 0}.adv td{border:0;padding:6px var(--s-2)}
+  .adv td:not(:first-child){display:grid;grid-template-columns:110px minmax(0,1fr);align-items:baseline}
+  .adv td:not(:first-child)::before{content:attr(data-l);font:700 var(--t-12) var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .adv .tag{justify-self:start}
+}
+</style>
+</head>
+<body>
+{{nav:security}}
+<main id="main">
+<section class="start">
+  <div class="wrap">
+    <div class="shero">
+      <div>
+        <span class="eyebrow">Security · coordinated disclosure</span>
+        <h1>Security <em>tracker</em></h1>
+        <p class="lede">Vulnerabilities in obs-rust are reported privately, fixed under embargo and shared with the OBS Project in encrypted archives before they are published.</p>
+        <div class="actions">
+          <a class="btn primary" href="{{sec_report_url}}">Report a vulnerability</a>
+          <a class="btn ghost" href="{{sec_policy_url}}">Policy</a>
+          <a class="btn ghost" href="#archives">Archives ↓</a>
+        </div>
+        <p class="fine">A bug reachable only from trusted local input (your own settings, plugins or scripts) is low risk: open a normal public issue for it. Anything a remote party can reach, or that leaks credentials, goes to a private advisory.</p>
+      </div>
+      <div class="board plate" data-object role="region" aria-labelledby="board-h">
+        <div class="hazard" aria-hidden="true"></div>
+        <div class="bhead" id="board-h"><i class="lock" aria-hidden="true"></i>Disclosure status<span class="src">cutoff {{sec_cutoff}}</span></div>
+        <div class="big"><b>{{sec_shared}}</b><span>advisories shared<br>with the OBS Project</span></div>
+        <div class="chips">
+          <p class="chip emb"><b>{{sec_embargoed}}</b><span>embargoed – shared privately with the OBS Project</span></p>
+          <p class="chip pub"><b>{{sec_published}}</b><span>published, listed in full below</span></p>
+        </div>
+        <div class="sevwrap">{{sec_severity}}</div>
+        <p class="receipt">{{sec_receipt}}</p>
+      </div>
+    </div>
+    <ol class="pipe" aria-label="Where reported advisories stand">{{sec_pipeline}}</ol>
+  </div>
+</section>
+
+<section id="process">
+  <div class="wrap">
+    <span class="eyebrow">The process</span>
+    <h2>How <em>disclosure</em> works</h2>
+    <p class="sub">A report moves through four steps; the sentences below are quoted from the security policy at the commit they link.</p>
+    <ol class="steps grid g4">{{sec_steps}}</ol>
+  </div>
+</section>
+
+<section id="archives">
+  <div class="wrap">
+    <span class="eyebrow">Encrypted · numbered · hashed</span>
+    <h2>Disclosure <em>archives</em></h2>
+    <p class="sub">Each archive holds one PDF per embargoed advisory, with its proposed fix, for the OBS Project. The zips are public; the password is not.</p>
+    <div class="arch">
+      <ol class="tl" aria-label="Timeline">{{sec_timeline}}</ol>
+      <div>{{sec_archives}}</div>
+    </div>
+    <div class="open" id="open">{{sec_open}}</div>
+    <div class="caution"><p><b>7-Zip only</b>The archives use AES-256 zip encryption, which the unzip built into Windows Explorer and macOS Archive Utility cannot open. Use 7-Zip, or <code>7z x</code> from p7zip on Linux and macOS.</p></div>
+  </div>
+</section>
+
+<section id="published">
+  <div class="wrap">
+    <span class="eyebrow">Public record</span>
+    <h2>Published <em>advisories</em></h2>
+    <p class="sub">Advisories leave the embargo here once fixed. CVE ids appear as soon as one is assigned.</p>
+    <div class="adv"><div class="tw"><table class="list">
+      <thead><tr><th scope="col">Advisory</th><th scope="col">CVE</th><th scope="col">Severity</th><th scope="col">CVSS</th><th scope="col">Weakness</th><th scope="col">Published</th><th scope="col">Credit</th></tr></thead>
+      <tbody>{{sec_advisories}}</tbody>
+    </table></div></div>
+  </div>
+</section>
+</main>
+{{footer}}
+<script>
+document.querySelectorAll('.cp').forEach(b=>b.addEventListener('click',()=>navigator.clipboard.writeText(b.dataset.copy).then(()=>{b.textContent='Copied';b.classList.add('ok');setTimeout(()=>{b.textContent='Copy';b.classList.remove('ok')},1500)})));
+document.querySelectorAll('#open pre').forEach(pre=>{const c=document.createElement('button');c.className='copy';c.type='button';c.textContent='copy';
+  c.onclick=()=>{const t=pre.cloneNode(true);t.querySelector('.copy')?.remove();navigator.clipboard.writeText(t.innerText.split('\n').filter(l=>!l.startsWith('#')).join('\n')).then(()=>{c.textContent='copied';setTimeout(()=>c.textContent='copy',1500);});};pre.appendChild(c);});
+</script>
+</body>
+</html>

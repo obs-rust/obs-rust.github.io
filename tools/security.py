@@ -166,7 +166,7 @@ def render_timeline(data: DisclosureArchives, published: list[GhAdvisory], now: 
         sev = adv.severity or "unrated"
         events.append((date, 0, f'<li class="pub"><time datetime="{date}">{date}</time><div><b>Advisory published</b> '
                        f'<a href="{esc(adv.html_url)}">{esc(adv.ghsa_id)}</a> <span class="tag sev s-{sev}">{sev}</span>'
-                       f'<p>{esc(adv.summary)}</p></div></li>'))
+                       '</div></li>'))
     for a in data.archives:
         events.append((a.published, 1, f'<li class="arc"><time datetime="{a.published}">{a.published}</time><div>'
                        f'<b>Archive {a.number} posted, encrypted</b> <a href="#archive-{a.number}">{a.advisories} advisories</a>'
@@ -195,7 +195,7 @@ def render_advisories(published: list[GhAdvisory]) -> str:
                else '<span class="muted">not assigned</span>')
         cwe = ", ".join(f'<abbr title="{esc(c.name)}">{esc(c.cwe_id)}</abbr>' for c in a.cwes) or '<span class="muted">—</span>'
         cred = ", ".join(f'<a href="https://github.com/{esc(c.login)}">{esc(c.login)}</a>' for c in a.credits) or "—"
-        rows.append(f'<tr><td><a class="ghsa" href="{esc(a.html_url)}">{esc(a.ghsa_id)}</a><p>{esc(a.summary)}</p></td>'
+        rows.append(f'<tr><td><a class="ghsa" href="{esc(a.html_url)}">{esc(a.ghsa_id)}</a></td>'
                     f'<td class="cve" data-l="CVE">{cve}</td><td data-l="Severity"><span class="tag sev s-{sev}">{sev}</span></td>'
                     f'<td class="num" data-l="CVSS">{f"{score:.1f}" if score is not None else "—"}</td><td data-l="Weakness">{cwe}</td>'
                     f'<td class="date" data-l="Published">{(a.published_at or "")[:10]}</td><td data-l="Credit">{cred}</td></tr>')

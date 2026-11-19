@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-{{head:Security tracker — obs-rust coordinated disclosure|How to report a vulnerability in obs-studio-rust, where every reported advisory stands, the encrypted disclosure archives shared with the OBS Project, and the published advisories.}}
+{{head:Security tracker — obs-rust coordinated disclosure|How to report a vulnerability in obs-studio-rust, where every reported advisory stands, the encrypted disclosure archives for the OBS Project, and the published advisories.}}
 <style>
 /* hero: the pitch left, the status board right */
 .shero{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:var(--s-6);align-items:start}
@@ -182,9 +182,9 @@
       <div class="board plate" data-object role="region" aria-labelledby="board-h">
         <div class="hazard" aria-hidden="true"></div>
         <div class="bhead" id="board-h"><i class="lock" aria-hidden="true"></i>Disclosure status<span class="src">cutoff {{sec_cutoff}}</span></div>
-        <div class="big"><b>{{sec_shared}}</b><span>advisories shared<br>with the OBS Project</span></div>
+        <div class="big"><b>{{sec_shared}}</b><span>advisories in encrypted<br>disclosure archives</span></div>
         <div class="chips">
-          <p class="chip emb"><b>{{sec_embargoed}}</b><span>embargoed – shared privately with the OBS Project</span></p>
+          <p class="chip emb"><b>{{sec_embargoed}}</b><span>embargoed – private until coordinated publication</span></p>
           <p class="chip pub"><b>{{sec_published}}</b><span>published, listed in full below</span></p>
         </div>
         <div class="sevwrap">{{sec_severity}}</div>

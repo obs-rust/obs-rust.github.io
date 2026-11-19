@@ -131,7 +131,7 @@ def render_archive(a: DisclosureArchive) -> str:
     dl = "".join(f"<div><dt>{k}</dt><dd>{v}</dd></div>" for k, v in facts)
     return f"""<article class="vault plate" id="archive-{a.number}">
 <div class="seal"><span class="label">Archive</span><b class="no">{a.number}</b>
-<span class="when">cutoff {a.cutoff}<br>sent {a.published}</span><span class="tag cu">AES-256</span></div>
+<span class="when">cutoff {a.cutoff}<br>posted {a.published}<br>sent {a.sent_upstream or "pending"}</span><span class="tag cu">AES-256</span></div>
 <div class="vbody">
 <h3><span class="label">File</span><span class="fn">{esc(a.file)}</span></h3>
 <dl class="facts">{dl}</dl>
@@ -158,7 +158,8 @@ def render_open(a: DisclosureArchive) -> str:
             f'<pre>{unzip}</pre></div>')
 
 
-def render_timeline(data: DisclosureArchives, published: list[GhAdvisory], now: dt.datetime, embargoed: int) -> str:
+def render_timeline(data: DisclosureArchives, published: list[GhAdvisory], now: dt.datetime, embargoed: int,
+                    sent: int) -> str:
     events: list[tuple[str, int, str]] = []
     for adv in published:
         date = (adv.published_at or "")[:10]
@@ -168,12 +169,18 @@ def render_timeline(data: DisclosureArchives, published: list[GhAdvisory], now: 
                        f'<p>{esc(adv.summary)}</p></div></li>'))
     for a in data.archives:
         events.append((a.published, 1, f'<li class="arc"><time datetime="{a.published}">{a.published}</time><div>'
-                       f'<b>Archive {a.number} sent to the OBS Project</b> <a href="#archive-{a.number}">{a.advisories} advisories</a>'
+                       f'<b>Archive {a.number} posted, encrypted</b> <a href="#archive-{a.number}">{a.advisories} advisories</a>'
                        f'<p>Everything reported up to {a.cutoff} and not in an earlier archive.</p></div></li>'))
+        if a.sent_upstream:
+            events.append((a.sent_upstream, 1, f'<li class="arc"><time datetime="{a.sent_upstream}">{a.sent_upstream}</time>'
+                           f'<div><b>Archive {a.number} sent to the OBS Project</b> '
+                           f'<a href="#archive-{a.number}">{a.advisories} advisories</a></div></li>'))
     events.sort(key=lambda e: (e[0], e[1]))
     today = f"{now:%Y-%m-%d}"
     events.append((today, 2, f'<li class="now"><time datetime="{today}">{today}</time><div><b>Now</b> '
-                   f'<span class="muted">{embargoed} advisories embargoed, shared privately with the OBS Project</span></div></li>'))
+                   f'<span class="muted">{embargoed} advisories embargoed, '
+                   f'{"shared privately with the OBS Project" if sent else "delivery to the OBS Project pending"}'
+                   f'</span></div></li>'))
     return "".join(e[2] for e in events)
 
 
@@ -214,6 +221,7 @@ def build(data: DisclosureArchives, published: list[GhAdvisory], policy: str, ro
 
     archives = sorted(data.archives, key=lambda a: a.number, reverse=True)
     shared = sum(a.advisories for a in archives)
+    sent = sum(a.advisories for a in archives if a.sent_upstream)
     in_archive = {g for a in archives for g in a.published_ids}
     reported = shared + sum(1 for a in published if a.ghsa_id not in in_archive)
     embargoed = sum(a.embargoed for a in archives)
@@ -225,12 +233,12 @@ def build(data: DisclosureArchives, published: list[GhAdvisory], policy: str, ro
     json_blob = f"https://github.com/{SITE_REPO}/blob/{site_sha}/security/archives.json"
     stages = (("Reported", reported, f"private advisories, by {cutoff}", "rep"),
               ("Embargoed", embargoed, "still private today", "emb"),
-              ("Sent upstream", shared, "in an encrypted archive", "up"),
+              ("Sent upstream", sent, "archive delivered to the OBS Project", "up"),
               ("Fix prepared", with_fix, "a patch ships in the archive", "fix"),
               ("Published", len(published), "public on GitHub", "pub"))
     pipeline = "".join(f'<li class="stn {cls}"><span class="k">{i:02d}</span><span class="nm">{name}</span>'
                        f'<b>{n}</b><span class="c">{cap}</span></li>' for i, (name, n, cap, cls) in enumerate(stages, 1))
-    severity = (severity_bar(sev, f"Severity of the {shared} advisories shared with the OBS Project", big=True)
+    severity = (severity_bar(sev, f"Severity of the {shared} advisories in encrypted archives", big=True)
                 + f'<ul class="sevlegend">{severity_legend(sev)}</ul>')
     steps: list[str] = []
     for s in STEPS:
@@ -247,7 +255,7 @@ def build(data: DisclosureArchives, published: list[GhAdvisory], policy: str, ro
         sec_reported=reported, sec_embargoed=embargoed, sec_shared=shared, sec_with_fix=with_fix,
         sec_published=len(published), sec_closed=sum(a.closed_left_out for a in archives), sec_cutoff=cutoff,
         sec_pipeline=pipeline, sec_severity=severity, sec_steps="".join(steps),
-        sec_timeline=render_timeline(data, published, now, embargoed),
+        sec_timeline=render_timeline(data, published, now, embargoed, sent),
         sec_archives="".join(render_archive(a) for a in archives), sec_open=render_open(archives[0]),
         sec_advisories=render_advisories(published), sec_receipt=receipt,
         sec_report_url=REPORT_URL, sec_policy_url=policy_blob)

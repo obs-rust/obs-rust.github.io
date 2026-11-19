@@ -115,6 +115,7 @@
 .facts dt{font:700 var(--t-12) var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 .facts dd{font:800 var(--t-30)/1.05 var(--stencil);color:var(--fg)}
 .hash{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:var(--s-2);align-items:center;padding:12px 14px;border:1px solid var(--edge);border-radius:var(--r-ctl);background:#0a0b0c}
+.pwhome{grid-template-columns:auto minmax(0,1fr)}.pwhome p{margin:0;font:500 var(--t-13)/1.45 var(--mono);color:var(--dim)}
 .hash .sha{font:500 var(--t-13)/1.45 var(--mono);color:var(--cu-hi);word-break:break-all;user-select:all;background:none;border:0;padding:0}
 .cp{min-height:32px;padding:6px 12px;font:700 var(--t-12) var(--mono);letter-spacing:.08em;text-transform:uppercase;background:var(--plate2);color:var(--fg2);border:1px solid var(--edge2);border-radius:var(--r-ctl);cursor:pointer}
 .cp:hover{color:var(--fg);border-color:var(--fg2)}
@@ -208,7 +209,7 @@
   <div class="wrap">
     <span class="eyebrow">Encrypted · numbered · hashed</span>
     <h2>Disclosure <em>archives</em></h2>
-    <p class="sub">Each archive holds one PDF per embargoed advisory, with its proposed fix, for the OBS Project. The zips are public; the password is not.</p>
+    <p class="sub">Each archive holds one PDF per embargoed advisory, with its proposed fix, for the OBS Project. The zips are public; the password is not: it is kept in <code>README.md</code> of the private repository <code>obs-rust/obs-security-upstream-review</code>, open only to invited reviewers.</p>
     <div class="arch">
       <ol class="tl" aria-label="Timeline">{{sec_timeline}}</ol>
       <div>{{sec_archives}}</div>

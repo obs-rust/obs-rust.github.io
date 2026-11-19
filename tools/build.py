@@ -41,6 +41,7 @@ from pydantic import JsonValue
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import corpus as corpusmod  # noqa: E402
 import mcp as mcpmod
+import security as securitymod  # noqa: E402
 import sitedocs  # noqa: E402
 from models import (ReplayFile, ReplayInline, ReplayPage, ReplayRow, WsEventMessage, WsHello,  # noqa: E402
                     WsIdentified, WsIdentify, WsResponseMessage)
@@ -58,6 +59,8 @@ from models import (  # noqa: E402
     Chunk,
     Conversion,
     CorpusFile,
+    DisclosureArchives,
+    GhAdvisories,
     Doc,
     Feature,
     Feed,
@@ -824,7 +827,8 @@ FOOTER = """<footer class="site"><div class="wrap">
 <li><a href="https://github.com/obs-rust/obs-studio">obs-studio</a></li>
 <li><a href="https://github.com/obs-rust/obs-studio/releases">Releases</a></li>
 <li><a href="https://github.com/obs-rust/obs-studio/blob/master/docs/features.md">Features ledger</a></li>
-<li><a href="https://github.com/obs-rust/constitution/blob/main/CONSTITUTION.md">Constitution</a></li></ul></div>
+<li><a href="https://github.com/obs-rust/constitution/blob/main/CONSTITUTION.md">Constitution</a></li>
+<li><a href="/security/">Security &amp; disclosure</a></li></ul></div>
 <div><h2>Build</h2><ul>
 <li><a href="/websocket/">WebSocket API</a></li><li><a href="/mcp/">MCP server</a></li><li><a href="/examples/">Examples</a></li>
 <li><a href="https://github.com/obs-rust/obs-studio/issues?q=is%3Aopen+label%3Aready">Ready issues</a></li>
@@ -1022,6 +1026,9 @@ def main() -> None:
             f"- [WebSocket API reference (HTML)]({SITE}/websocket/): every obs-websocket v5 request, event and enum, "
             "with a live console",
             f"- [Examples]({SITE}/examples/): Rust, Python, JS and raw-socket clients, batch requests, scripts, plugins"],
+        "Install and use": [
+            f"- [Security tracker]({SITE}/security/): how to report a vulnerability, coordinated disclosure with the "
+            "OBS Project, encrypted disclosure archives with their SHA-256, and the published advisories"],
     }
     ws_items, ws_nav = render_ws_items(proto)
     replay = replay_page(ROOT / "src" / "replay.json", proto, chans)
@@ -1036,8 +1043,14 @@ def main() -> None:
     (out / "llms.txt").write_text(corpusmod.llms_txt(docs, header + sitedocs.router_llms(router), SITE, feeds, extra))
     mref, mnav = mcpmod.render_reference(surface.tools)
     hero = mcpmod.render_transcript(next(x for x in sessions if x.slug == "record-when-ready"))
+    site_sha = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    advisories = cached("security-advisories.json", a.offline, lambda: gh(securitymod.ADVISORIES_API),
+                        GhAdvisories.model_validate_json).root
+    security = securitymod.build(
+        DisclosureArchives.model_validate_json((ROOT / "security" / "archives.json").read_bytes()), advisories,
+        (obs / "SECURITY.md").read_text(), ROOT, out, obs_sha, site_sha or "main", now)
     ctx = PageContext(
-        stats=stats, mcp=mstats, hero=hero_img, gpu=gpu_img,
+        stats=stats, security=security, mcp=mstats, hero=hero_img, gpu=gpu_img,
         release_tag=esc(rel.tag_name) if rel else "—",
         release_name=esc(rel.name or rel.tag_name) if rel else "releases",
         release_url=esc(rel.html_url) if rel else f"https://github.com/{REPO}/releases",

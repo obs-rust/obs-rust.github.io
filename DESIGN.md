@@ -87,6 +87,9 @@ Five pages and the 404. Each page has one **object**, marked `data-object`, that
 /mcp/         The agent session panel.                    /mcp/index.md is its text twin
 /examples/    The first runnable snippet.                 /404.html: the badge and the nav links
 /ai/          The search box, then router and feeds.      /ai/#q=<query> runs a search into #hits
+/security/    The disclosure status board, then pipeline, process, archives, published advisories.
+              Aggregates only from security/archives.json; zips in security/archives/ (AES-256, the
+              password never in this repo); published advisories from the GitHub API. Footer link.
               /ai/docs/*.md, corpus.json, manifest.json; /llms.txt, /llms-ctx.txt, /llms-full.txt
 P1 depth:     /download/ /changes/ /progress/ /control/ /websocket/<Name>.md /mcp/tools/<name>.md
 ```

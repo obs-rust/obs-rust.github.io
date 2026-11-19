@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "note": "Public aggregates only. Never add titles, GHSA ids, components, files, CWEs or impact classes of embargoed advisories; published_ids lists only advisories GitHub shows as published.",
+  "archives": [
+    {
+      "number": "001",
+      "file": "obs-security-disclosure-001-2026-11-19.zip",
+      "cutoff": "2026-11-19",
+      "published": "2026-11-19",
+      "size": 2311083,
+      "sha256": "f4c8b10e22254e5f22ab8bd9e208e1ea062b4396d9b513ae7269fd1f0e476868",
+      "advisories": 46,
+      "with_fix": 15,
+      "closed_left_out": 1,
+      "severity": {"critical": 0, "high": 5, "medium": 19, "low": 22},
+      "published_ids": ["GHSA-rjwf-j53r-47qr"]
+    }
+  ]
+}

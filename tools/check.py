@@ -19,13 +19,14 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from models import CorpusFile, Manifest, McpSchemaFile, ReplayInline, WsProtocol  # noqa: E402
+from models import (CorpusFile, DisclosureArchives, Manifest, McpSchemaFile, PublishedFile, ReplayInline,  # noqa: E402
+                    WsProtocol)
 
 ROOT = Path(__file__).resolve().parent.parent
 EXPECTED = ["index.html", "404.html", "websocket/index.html", "examples/index.html", "ai/index.html",
             "mcp/index.html", "llms.txt", "llms-ctx.txt", "llms-full.txt", "ai/corpus.json",
             "websocket/protocol.json", "mcp/schema.json", "mcp/server.json", "mcp/index.md",
-            "sitemap.xml", "robots.txt", "CNAME"]
+            "sitemap.xml", "robots.txt", "CNAME", "security/index.html", "security/advisories.json"]
 BUDGET_KB = {"llms-ctx.txt": 300, "assets/fonts": 160, "index.html": 120}
 # Words in the home copy that contain digits but are names, not figures.
 DIGIT_OK = {"v5", "10m", "10-minute", "c++", "404", "sha256sums"}
@@ -232,6 +233,7 @@ def main() -> int:
     errs.extend(check_one_system(site))
     errs.extend(check_object_first(site))
     errs.extend(check_replay(site))
+    errs.extend(check_security(site))
 
     # agent router and manifest (DESIGN.md P0 #2)
     llms_text = (site / "llms.txt").read_text()
@@ -356,7 +358,8 @@ def check_finish(site: Path) -> list[str]:
 
 
 # DESIGN.md §5: the one object each page opens on
-OBJECT_PAGES = ("index.html", "websocket/index.html", "examples/index.html", "ai/index.html", "mcp/index.html")
+OBJECT_PAGES = ("index.html", "websocket/index.html", "examples/index.html", "ai/index.html", "mcp/index.html",
+                "security/index.html")
 HASH_OPENER = re.compile(r"addEventListener\(['\"]hashchange['\"]")
 
 
@@ -434,6 +437,58 @@ def check_replay(site: Path) -> list[str]:
         errs.append("websocket: the console does not label the replay scripted with its release tag")
     if re.search(r"\brecorded\b", con, re.I):
         errs.append("websocket: the console calls the scripted replay recorded")
+    return errs
+
+
+GHSA = re.compile(r"GHSA(?:-[23456789cfghjmpqrvwx]{4}){3}", re.I)
+TEXT_SUFFIXES = {".html", ".txt", ".md", ".json", ".jsonl", ".xml", ".css", ".js"}
+SECRET_NAME = re.compile(r"(?:^|[._-])(?:pass|password|passwd|pwd|secret|key)(?:$|[._-])|\.(?:pass|pwd|key|pem)$", re.I)
+SECRET_TEXT = re.compile(r"\b(?:pass(?:word|phrase)?|pwd)\b\s*(?::|=|\bis\b)\s*[`'\"]?[A-Za-z0-9+/!#$%&*@^_~-]{8,}", re.I)
+PRIVATE_NAMES = re.compile(r"(?:^|/)(?:README|manifest)[^/]*$|\.(?:pdf|patch)$", re.I)
+
+
+def check_security(site: Path) -> list[str]:
+    """/security/ publishes encrypted archives and aggregates only: each zip is byte-identical to
+    security/archives.json, nothing from the private repository sits beside it, no file of the site names a GHSA
+    id that is not in the published list, and nothing that looks like a password ships."""
+    errs: list[str] = []
+    page = site / "security/index.html"
+    listing = site / "security/advisories.json"
+    if not page.is_file() or not listing.is_file():
+        return ["security: /security/ or /security/advisories.json is missing"]
+    html = page.read_text()
+    data = DisclosureArchives.model_validate_json((ROOT / "security/archives.json").read_bytes())
+    zips = site / "security/archives"
+    shipped = {p.name for p in zips.iterdir()} if zips.is_dir() else set[str]()
+    if stray := sorted(shipped - {a.file for a in data.archives}):
+        errs.append(f"security: files beside the archives that archives.json does not list: {stray}")
+    for a in data.archives:
+        f = zips / a.file
+        body = f.read_bytes() if f.is_file() else b""
+        if len(body) != a.size or hashlib.sha256(body).hexdigest() != a.sha256:
+            errs.append(f"security: /security/archives/{a.file} is missing or differs from archives.json")
+        if f'href="/security/archives/{a.file}"' not in html or a.sha256 not in html:
+            errs.append(f"security: the page lacks the download link or SHA-256 of archive {a.number}")
+    for f in sorted((site / "security").rglob("*")):
+        rel = str(f.relative_to(site))
+        if f.is_file() and PRIVATE_NAMES.search(rel):
+            errs.append(f"security: {rel} looks like private-repository material (README, manifest, PDF, patch)")
+    allowed = {p.ghsa_id.upper() for p in PublishedFile.model_validate_json(listing.read_bytes()).published}
+    for f in sorted(site.rglob("*")):
+        if not f.is_file():
+            continue
+        rel = str(f.relative_to(site))
+        if SECRET_NAME.search(f.name):
+            errs.append(f"security: {rel} is named like a secret")
+        if f.suffix not in TEXT_SUFFIXES:
+            continue
+        text = f.read_text(errors="replace")
+        if bad := sorted({g.upper() for g in GHSA.findall(text)} - allowed):
+            errs.append(f"security: {rel} names {len(bad)} GHSA id(s) that are not published")
+        if rel.startswith("security/") and SECRET_TEXT.search(text):
+            errs.append(f"security: {rel} holds something that reads like a password")
+    if SECRET_TEXT.search((ROOT / "security/archives.json").read_text()):
+        errs.append("security: security/archives.json holds something that reads like a password")
     return errs
 
 

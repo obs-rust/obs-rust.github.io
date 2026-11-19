@@ -90,6 +90,110 @@ class GhReleases(RootModel[list[GhRelease]]):
     model_config = ConfigDict(frozen=True)
 
 
+# ---------------------------------------------------------------- security (/security/)
+Severity = Literal["critical", "high", "medium", "low"]
+
+
+class GhCvss(Theirs):
+    vector_string: str | None = None
+    score: float | None = None
+
+
+class GhCvssSet(Theirs):
+    cvss_v3: GhCvss | None = None
+    cvss_v4: GhCvss | None = None
+
+
+class GhCwe(Theirs):
+    cwe_id: str
+    name: str = ""
+
+
+class GhCredit(Theirs):
+    login: str
+    type: str = ""
+
+
+class GhAdvisory(Theirs):
+    """GET /repos/{repo}/security-advisories?state=published: one published repository advisory."""
+
+    ghsa_id: str
+    cve_id: str | None = None
+    html_url: str
+    summary: str
+    severity: Severity | None = None
+    state: str
+    published_at: str | None = None
+    cvss_severities: GhCvssSet | None = None
+    cwes: list[GhCwe] = []
+    credits: list[GhCredit] = []
+
+    def score(self) -> float | None:
+        s = self.cvss_severities
+        if s is None:
+            return None
+        for c in (s.cvss_v4, s.cvss_v3):
+            if c is not None and c.score is not None:
+                return c.score
+        return None
+
+
+class GhAdvisories(RootModel[list[GhAdvisory]]):
+    model_config = ConfigDict(frozen=True)
+
+
+class SeverityCounts(Ours):
+    critical: int = Field(ge=0)
+    high: int = Field(ge=0)
+    medium: int = Field(ge=0)
+    low: int = Field(ge=0)
+
+    def total(self) -> int:
+        return self.critical + self.high + self.medium + self.low
+
+
+class DisclosureArchive(Ours):
+    """One encrypted disclosure archive, as public aggregates only (security/archives.json).
+    No title, GHSA id, component, file, CWE or impact class of an embargoed advisory belongs here."""
+
+    number: str = Field(pattern=r"^\d{3}$")
+    file: str = Field(pattern=r"^obs-security-disclosure-\d{3}-\d{4}-\d{2}-\d{2}\.zip$")
+    cutoff: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    published: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    size: int = Field(gt=0)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    advisories: int = Field(gt=0)
+    with_fix: int = Field(ge=0)
+    closed_left_out: int = Field(ge=0)
+    severity: SeverityCounts
+    published_ids: list[str] = []
+
+    @property
+    def embargoed(self) -> int:
+        return self.advisories - len(self.published_ids)
+
+
+class DisclosureArchives(Ours):
+    schema_version: Literal[1]
+    note: str
+    archives: list[DisclosureArchive]
+
+
+class PublishedRef(Ours):
+    ghsa_id: str = Field(pattern=r"^GHSA(-[23456789cfghjmpqrvwx]{4}){3}$")
+    cve_id: str | None
+    url: str
+
+
+class PublishedFile(Ours):
+    """/security/advisories.json: the published advisories the page shows, and so the only GHSA ids
+    any file of the site may name (tools/check.py)."""
+
+    source: str
+    fetched: str
+    published: list[PublishedRef]
+
+
 # ---------------------------------------------------------------- leaderboard conversion.json
 class ConvPercent(Theirs):
     percent: float
@@ -727,10 +831,35 @@ class SocialCard:
 
 
 @dataclass(frozen=True, slots=True)
+class SecurityPage:
+    """/security/: the disclosure tracker. Figures are aggregates of security/archives.json plus the
+    published advisories from the GitHub API; the HTML fragments are rendered by tools/security.py."""
+
+    sec_reported: int
+    sec_embargoed: int
+    sec_shared: int
+    sec_with_fix: int
+    sec_published: int
+    sec_closed: int
+    sec_cutoff: str
+    sec_pipeline: str
+    sec_severity: str
+    sec_steps: str
+    sec_timeline: str
+    sec_archives: str
+    sec_open: str
+    sec_advisories: str
+    sec_receipt: str
+    sec_report_url: str
+    sec_policy_url: str
+
+
+@dataclass(frozen=True, slots=True)
 class PageContext:
     """Every {{placeholder}} a page template may use. Nested stats are flattened by as_mapping()."""
 
     stats: RepoStats
+    security: SecurityPage
     mcp: McpStats
     hero: HeroImage
     gpu: LedgerPicture

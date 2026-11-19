@@ -34,6 +34,12 @@ ZIP_DIR = "security/archives"
 SEVERITIES: tuple[tuple[str, str], ...] = (("critical", "Critical"), ("high", "High"), ("medium", "Medium"), ("low", "Low"))
 
 
+# Where each archive's password lives: a private file, never this site (maintainer, 2026-11-19).
+PRIVATE_REPO = "obs-rust/obs-security-upstream-review"
+PASSWORD_FILE = "README.md"
+PASSWORD_URL = (f"https://github.com/{PRIVATE_REPO}/blob/main/{PASSWORD_FILE}"
+                "#disclosure-archives-private-never-publish-this-file")
+
 @dataclass(frozen=True, slots=True)
 class Step:
     """One stage of the disclosure process, quoted from SECURITY.md (pattern must still match) or, when the
@@ -51,7 +57,8 @@ STEPS: tuple[Step, ...] = (
     Step("02", "Fix under embargo", "A maintainer acknowledges the report within 72 hours; the fix is written and "
          "reviewed in the advisory's private fork, failing test first.", r"\*\*Within 72 hours:\*\*"),
     Step("03", "Share with upstream", "Embargoed advisories go to the OBS Project in numbered AES-256 archives. "
-         "The password travels on a separate channel and is not on this site.", None),
+         f"Each password is kept in {PASSWORD_FILE} of the private repository {PRIVATE_REPO}, "
+         "open only to invited reviewers; it is never on this site.", None),
     Step("04", "Publish", "The project aims to disclose within 90 days of the report, requests a CVE where it "
          "applies, and credits the reporter.", r"We aim to disclose within 90 days of the report"),
 )
@@ -138,6 +145,9 @@ def render_archive(a: DisclosureArchive) -> str:
 {severity_bar(a.severity, f"Severity of the {a.advisories} advisories in archive {a.number}")}
 <div class="hash"><span class="label">SHA-256</span><code class="sha" id="sha-{a.number}">{a.sha256}</code>
 <button class="cp" type="button" data-copy="{a.sha256}" aria-label="Copy the SHA-256 of archive {a.number}">Copy</button></div>
+<div class="hash pwhome"><span class="label">Password</span><p>Private: row {a.number} of the Disclosure archives table in
+<a href="{PASSWORD_URL}"><code>{PASSWORD_FILE}</code></a> of <code>{PRIVATE_REPO}</code>. Only invited reviewers can open
+that repository; the password is never on this site.</p></div>
 <div class="actions"><a class="btn primary" href="{url}" download>Download archive {a.number} ↓</a>
 <span class="muted dlnote">{human_size(a.size)} · encrypted zip · {a.closed_left_out} closed report left out</span></div>
 </div></article>"""
@@ -148,8 +158,8 @@ def render_open(a: DisclosureArchive) -> str:
     f = esc(a.file)
     verify = (f'<span class="c"># Linux</span>\nsha256sum {f}\n<span class="c"># macOS</span>\nshasum -a 256 {f}\n'
               f'<span class="c"># Windows (PowerShell)</span>\nGet-FileHash {f}')
-    unzip = (f'7z x {f}\n<span class="c"># 7-Zip asks for the password. The OBS Project receives it</span>\n'
-             '<span class="c"># on a separate channel; it is not on this site.</span>')
+    unzip = (f'7z x {f}\n<span class="c"># 7-Zip asks for the password. It is in {PASSWORD_FILE} of the</span>\n'
+             f'<span class="c"># private repository {PRIVATE_REPO} (invited reviewers only).</span>')
     return (f'<div class="step plate"><span class="label">1 · Verify</span><h3>Check the SHA-256</h3>'
             f'<p class="muted">The output must equal <code>{a.sha256[:12]}…</code>, the full hash on the card above.</p>'
             f'<pre>{verify}</pre></div>'

@@ -160,6 +160,8 @@ class DisclosureArchive(Ours):
     file: str = Field(pattern=r"^obs-security-disclosure-\d{3}-\d{4}-\d{2}-\d{2}\.zip$")
     cutoff: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
     published: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    # Date the link and password went to the OBS Project; None until a maintainer has sent them.
+    sent_upstream: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     size: int = Field(gt=0)
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     advisories: int = Field(gt=0)
